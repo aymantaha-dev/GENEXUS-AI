@@ -1,6 +1,7 @@
 # 🌟 GENEXUS-AI Ultimate AI Integration Platform
 
-![GENEXUS-AI Banner](https://github.com/aymantaha3345/GENEXUS-AI/blob/main/src/Banner.jpg?raw=true)
+<img width="2000" height="600" alt="banner" src="https://github.com/user-attachments/assets/a95df44d-edec-4ba9-a2a4-f00c06d064e3" />
+
 
 ## 📋 Executive Summary
 
