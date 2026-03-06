@@ -1,0 +1,38 @@
+{
+  "name": "genexus-ai",
+  "version": "1.1.0",
+  "description": "Professional API server integrating all Pollinations.ai capabilities",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "test": "node tests/test-endpoints.js",
+    "build": "echo \"No build step required for this Node.js service\""
+  },
+  "keywords": [
+    "ai",
+    "api",
+    "pollinations",
+    "image-generation",
+    "video-generation",
+    "chat"
+  ],
+  "author": "Ayman",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.13.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.1",
+    "express-fileupload": "^1.5.2",
+    "express-validator": "^7.3.1",
+    "form-data": "^4.0.5",
+    "helmet": "^7.2.0",
+    "morgan": "^1.10.1",
+    "uuid": "^8.3.2",
+    "winston": "^3.19.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}

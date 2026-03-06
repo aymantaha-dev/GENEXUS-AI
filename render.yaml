@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: genexus-ai
+    runtime: docker
+    env: production
+    region: oregon
+    plan: free
+    envVars:
+      - key: POLLINATIONS_API_KEY
+        value: ""
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+    healthCheckPath: /health
+    autoDeploy: true
+    branch: main
+    rootDir: .
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
