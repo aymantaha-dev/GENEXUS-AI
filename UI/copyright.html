@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Copyright | GENEXUS UI</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="premium-theme info-page">
+
+    <div class="mesh-gradient"></div>
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo" style="text-decoration:none; color:inherit;">
+                <div class="logo-wrapper"><i data-lucide="zap" class="logo-icon"></i></div>
+                <span class="logo-text">GENEXUS <small>UI</small></span>
+            </a>
+            <div class="nav-actions">
+                <button id="btn-theme" class="nav-btn glass"><i data-lucide="sun"></i></button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="app-container" style="grid-template-columns: 1fr; max-width: 900px; padding: 2rem 1.5rem;">
+        <section class="main-content">
+            <header class="hero">
+                <div class="badge">Copyright</div>
+                <h1 class="text-gradient">Copyright & License</h1>
+            </header>
+
+            <a href="index.html" class="back-link"><i data-lucide="arrow-left"></i> Back to Generator</a>
+
+            <div class="info-card">
+                <h2>MIT License</h2>
+                <p>GENEXUS UI is licensed under the <strong>MIT License</strong>. You are free to use, modify, distribute, and even use it commercially, provided you include the original copyright notice.</p>
+            </div>
+
+            <div class="info-card">
+                <h2>Full License Text</h2>
+                <p style="font-family: monospace; font-size: 0.8rem; background: var(--glass-bg); padding: 1rem; border-radius: 12px; white-space: pre-wrap; line-height: 1.6;">
+MIT License
+
+Copyright (c) 2026 aymantaha-dev
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+                </p>
+            </div>
+
+            <div class="info-card">
+                <h2>Third-Party Assets</h2>
+                <p>This project uses the following third-party resources:</p>
+                <ul>
+                    <li><strong>Lucide Icons</strong> — <a href="https://lucide.dev" target="_blank" rel="noopener">lucide.dev</a> (ISC License)</li>
+                    <li><strong>Plus Jakarta Sans</strong> — <a href="https://fonts.google.com/specimen/Plus+Jakarta+Sans" target="_blank" rel="noopener">Google Fonts</a> (OFL License)</li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h2>Disclaimer</h2>
+                <p>This project is a <strong>demo and educational example</strong>. It is not a commercial product. The generated images are for demonstration purposes only. The project author is not responsible for how the code or generated content is used by others.</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <div class="logo-wrapper footer-logo"><i data-lucide="zap" class="logo-icon"></i></div>
+                <span class="footer-title">GENEXUS <small>UI</small></span>
+            </div>
+            <nav class="footer-links">
+                <a href="about.html">About</a>
+                <a href="why.html">Why</a>
+                <a href="copyright.html">Copyright</a>
+            </nav>
+            <div class="footer-bottom">
+                <p>GENEXUS UI is a demo project. Not a real product.</p>
+                <a href="https://github.com/aymantaha-dev/GENEXUS-AI" target="_blank" rel="noopener" class="github-link">
+                    <i data-lucide="github"></i> View on GitHub
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            const btnTheme = document.getElementById('btn-theme');
+            function initTheme() {
+                const saved = localStorage.getItem('genexus_theme') || 'dark';
+                document.documentElement.setAttribute('data-theme', saved);
+                updateThemeIcon(saved);
+            }
+            function updateThemeIcon(theme) {
+                btnTheme.innerHTML = theme === 'dark' ? '<i data-lucide="sun"></i>' : '<i data-lucide="moon"></i>';
+                lucide.createIcons();
+            }
+            initTheme();
+            btnTheme.onclick = () => {
+                const current = document.documentElement.getAttribute('data-theme');
+                const next = current === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', next);
+                localStorage.setItem('genexus_theme', next);
+                updateThemeIcon(next);
+            };
+        });
+    </script>
+</body>
+</html>

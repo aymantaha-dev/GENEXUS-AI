@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>About | GENEXUS UI</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="premium-theme info-page">
+
+    <div class="mesh-gradient"></div>
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo" style="text-decoration:none; color:inherit;">
+                <div class="logo-wrapper"><i data-lucide="zap" class="logo-icon"></i></div>
+                <span class="logo-text">GENEXUS <small>UI</small></span>
+            </a>
+            <div class="nav-actions">
+                <button id="btn-theme" class="nav-btn glass"><i data-lucide="sun"></i></button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="app-container" style="grid-template-columns: 1fr; max-width: 900px; padding: 2rem 1.5rem;">
+        <section class="main-content">
+            <header class="hero">
+                <div class="badge">About</div>
+                <h1 class="text-gradient">About GENEXUS UI</h1>
+            </header>
+
+            <a href="index.html" class="back-link"><i data-lucide="arrow-left"></i> Back to Generator</a>
+
+            <div class="info-card">
+                <h2>What is GENEXUS UI?</h2>
+                <p>GENEXUS UI is a <strong>demo project</strong> built to showcase a modern, premium AI image generation interface. It is designed as an example of what a professional-grade web application for AI art generation could look like.</p>
+                <p>This project demonstrates clean UI/UX design, responsive layouts, theme switching, local history management, and integration with a simple image generation API.</p>
+            </div>
+
+            <div class="info-card">
+                <h2>Key Features</h2>
+                <ul>
+                    <li><strong>Flux-Schnell Engine</strong> — Powered by a fast image generation model.</li>
+                    <li><strong>Responsive Design</strong> — Works seamlessly on desktop, tablet, and mobile.</li>
+                    <li><strong>Dark & Light Themes</strong> — Switch between themes with persistent preferences.</li>
+                    <li><strong>Local History</strong> — Your recent generations are saved in your browser.</li>
+                    <li><strong>Customizable Settings</strong> — Aspect ratio, quality, style, and count controls.</li>
+                    <li><strong>One-Click Actions</strong> — Download images or copy prompts instantly.</li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h2>Tech Stack</h2>
+                <ul>
+                    <li>Vanilla HTML5, CSS3, and JavaScript (no frameworks)</li>
+                    <li>Lucide Icons for a consistent icon set</li>
+                    <li>Google Fonts (Plus Jakarta Sans)</li>
+                    <li>LocalStorage for theme and history persistence</li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h2>Open Source</h2>
+                <p>This project is open source and available on GitHub. Feel free to explore the code, fork it, or contribute improvements.</p>
+                <p><a href="https://github.com/aymantaha-dev/GENEXUS-AI" target="_blank" rel="noopener"><i data-lucide="github"></i> github.com/aymantaha-dev/GENEXUS-AI</a></p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <div class="logo-wrapper footer-logo"><i data-lucide="zap" class="logo-icon"></i></div>
+                <span class="footer-title">GENEXUS <small>UI</small></span>
+            </div>
+            <nav class="footer-links">
+                <a href="about.html">About</a>
+                <a href="why.html">Why</a>
+                <a href="copyright.html">Copyright</a>
+            </nav>
+            <div class="footer-bottom">
+                <p>GENEXUS UI is a demo project. Not a real product.</p>
+                <a href="https://github.com/aymantaha-dev/GENEXUS-AI" target="_blank" rel="noopener" class="github-link">
+                    <i data-lucide="github"></i> View on GitHub
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            const btnTheme = document.getElementById('btn-theme');
+            function initTheme() {
+                const saved = localStorage.getItem('genexus_theme') || 'dark';
+                document.documentElement.setAttribute('data-theme', saved);
+                updateThemeIcon(saved);
+            }
+            function updateThemeIcon(theme) {
+                btnTheme.innerHTML = theme === 'dark' ? '<i data-lucide="sun"></i>' : '<i data-lucide="moon"></i>';
+                lucide.createIcons();
+            }
+            initTheme();
+            btnTheme.onclick = () => {
+                const current = document.documentElement.getAttribute('data-theme');
+                const next = current === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', next);
+                localStorage.setItem('genexus_theme', next);
+                updateThemeIcon(next);
+            };
+        });
+    </script>
+</body>
+</html>

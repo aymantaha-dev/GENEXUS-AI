@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Why | GENEXUS UI</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="premium-theme info-page">
+
+    <div class="mesh-gradient"></div>
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo" style="text-decoration:none; color:inherit;">
+                <div class="logo-wrapper"><i data-lucide="zap" class="logo-icon"></i></div>
+                <span class="logo-text">GENEXUS <small>UI</small></span>
+            </a>
+            <div class="nav-actions">
+                <button id="btn-theme" class="nav-btn glass"><i data-lucide="sun"></i></button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="app-container" style="grid-template-columns: 1fr; max-width: 900px; padding: 2rem 1.5rem;">
+        <section class="main-content">
+            <header class="hero">
+                <div class="badge">Why</div>
+                <h1 class="text-gradient">Why GENEXUS UI?</h1>
+            </header>
+
+            <a href="index.html" class="back-link"><i data-lucide="arrow-left"></i> Back to Generator</a>
+
+            <div class="info-card">
+                <h2>Why This Project Exists</h2>
+                <p>GENEXUS UI was created as a <strong>learning and demonstration project</strong>. The goal was to build a polished, production-ready frontend for an AI image generation tool without relying on heavy frameworks.</p>
+                <p>It serves as a reference implementation for developers who want to see how a modern web app can be built with pure HTML, CSS, and JavaScript while maintaining a premium look and feel.</p>
+            </div>
+
+            <div class="info-card">
+                <h2>Why Vanilla Stack?</h2>
+                <p>We chose vanilla HTML, CSS, and JavaScript to keep the project lightweight, fast, and easy to understand. No build steps, no dependencies to manage, and no framework lock-in. This makes it perfect for:</p>
+                <ul>
+                    <li>Learning modern web development fundamentals</li>
+                    <li>Quick prototyping and customization</li>
+                    <li>Deploying anywhere without a build pipeline</li>
+                    <li>Understanding how things work under the hood</li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h2>Why Open Source?</h2>
+                <p>Sharing knowledge is at the heart of the developer community. By open-sourcing GENEXUS UI, we hope to:</p>
+                <ul>
+                    <li>Help others learn from real-world code</li>
+                    <li>Receive feedback and contributions from the community</li>
+                    <li>Build something together that benefits everyone</li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h2>Why "GENEXUS"?</h2>
+                <p>The name combines <em>Genesis</em> (creation, origin) and <em>Nexus</em> (connection, hub). It represents the idea of a creative hub where imagination meets technology — a place where ideas are born and connected through AI.</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <div class="logo-wrapper footer-logo"><i data-lucide="zap" class="logo-icon"></i></div>
+                <span class="footer-title">GENEXUS <small>UI</small></span>
+            </div>
+            <nav class="footer-links">
+                <a href="about.html">About</a>
+                <a href="why.html">Why</a>
+                <a href="copyright.html">Copyright</a>
+            </nav>
+            <div class="footer-bottom">
+                <p>GENEXUS UI is a demo project. Not a real product.</p>
+                <a href="https://github.com/aymantaha-dev/GENEXUS-AI" target="_blank" rel="noopener" class="github-link">
+                    <i data-lucide="github"></i> View on GitHub
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            const btnTheme = document.getElementById('btn-theme');
+            function initTheme() {
+                const saved = localStorage.getItem('genexus_theme') || 'dark';
+                document.documentElement.setAttribute('data-theme', saved);
+                updateThemeIcon(saved);
+            }
+            function updateThemeIcon(theme) {
+                btnTheme.innerHTML = theme === 'dark' ? '<i data-lucide="sun"></i>' : '<i data-lucide="moon"></i>';
+                lucide.createIcons();
+            }
+            initTheme();
+            btnTheme.onclick = () => {
+                const current = document.documentElement.getAttribute('data-theme');
+                const next = current === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', next);
+                localStorage.setItem('genexus_theme', next);
+                updateThemeIcon(next);
+            };
+        });
+    </script>
+</body>
+</html>
