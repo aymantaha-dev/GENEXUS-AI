@@ -6,6 +6,7 @@
     <title>Offline | GENEXUS UI</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        
         body {
             font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
             background: #030303;
@@ -16,24 +17,112 @@
             min-height: 100vh;
             padding: 2rem;
             text-align: center;
+            overflow: hidden;
+            position: relative;
         }
+
+        /* ===== Background Grid ===== */
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .bg-grid-pattern {
+            position: absolute;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(168, 85, 247, 0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(168, 85, 247, 0.08) 1px, transparent 1px);
+            background-size: 30px 30px;
+            background-repeat: repeat;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            animation: gridMove 30s linear infinite;
+            will-change: transform;
+        }
+
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(30px, 30px); }
+        }
+
+        /* Gradient overlay */
+        .mesh-gradient {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background:
+                radial-gradient(at 0% 0%, rgba(168, 85, 247, 0.15) 0, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.15) 0, transparent 50%);
+        }
+
+        /* Glow orbs */
+        .glow-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(100px);
+            z-index: 0;
+            opacity: 0.12;
+        }
+        .orb-1 { 
+            width: 400px; 
+            height: 400px; 
+            background: #a855f7; 
+            top: -100px; 
+            left: -100px; 
+        }
+        .orb-2 { 
+            width: 500px; 
+            height: 500px; 
+            background: #3b82f6; 
+            bottom: -150px; 
+            right: -150px; 
+        }
+
+        /* Subtle grid glow */
+        .bg-grid-glow {
+            position: absolute;
+            inset: 0;
+            background: 
+                radial-gradient(ellipse at 20% 50%, rgba(168, 85, 247, 0.04) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 50%, rgba(59, 130, 246, 0.04) 0%, transparent 60%);
+        }
+
         .offline-container {
             max-width: 400px;
+            z-index: 1;
+            position: relative;
         }
+
         .offline-icon {
             font-size: 4rem;
             margin-bottom: 1.5rem;
-            opacity: 0.5;
+            opacity: 0.6;
         }
+
         h1 {
             font-size: 2rem;
             margin-bottom: 0.5rem;
         }
+
+        .text-gradient {
+            background: linear-gradient(to right, #a855f7, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
         p {
             color: #8e8e93;
             line-height: 1.6;
             margin-bottom: 1.5rem;
         }
+
         .retry-btn {
             background: linear-gradient(135deg, #a855f7, #3b82f6);
             color: white;
@@ -44,24 +133,34 @@
             font-size: 1rem;
             cursor: pointer;
             transition: 0.3s;
+            position: relative;
+            z-index: 1;
         }
+
         .retry-btn:hover {
             transform: scale(1.05);
             opacity: 0.9;
         }
-        .text-gradient {
-            background: linear-gradient(to right, #a855f7, #3b82f6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
     </style>
 </head>
 <body>
+
+    <!-- Background Grid -->
+    <div class="bg-grid">
+        <div class="bg-grid-pattern"></div>
+        <div class="bg-grid-glow"></div>
+    </div>
+
+    <div class="mesh-gradient"></div>
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+
     <div class="offline-container">
         <div class="offline-icon">📡</div>
         <h1>You're <span class="text-gradient">Offline</span></h1>
         <p>Please check your internet connection and try again. Your generated images are safely stored locally.</p>
         <button class="retry-btn" onclick="location.reload()">Retry Connection</button>
     </div>
+
 </body>
 </html>

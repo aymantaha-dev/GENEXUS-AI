@@ -1,4 +1,4 @@
-/* ===== style.css (full, with new credit styles) ===== */
+/* ===== style.css (full, with all requested changes) ===== */
 
 :root {
     --bg-color: #030303;
@@ -10,6 +10,8 @@
     --accent-secondary: #3b82f6;
     --glass-bg: rgba(255, 255, 255, 0.03);
     --shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    --grid-color: rgba(168, 85, 247, 0.04);
+    --grid-line: rgba(168, 85, 247, 0.06);
 }
 
 [data-theme="light"] {
@@ -20,6 +22,8 @@
     --border-color: rgba(0, 0, 0, 0.1);
     --glass-bg: rgba(255, 255, 255, 0.5);
     --shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    --grid-color: rgba(59, 130, 246, 0.04);
+    --grid-line: rgba(59, 130, 246, 0.06);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -32,20 +36,74 @@ body {
     min-height: 100vh;
 }
 
+/* ===== Background Grid - Optimized ===== */
+.bg-grid {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.bg-grid-pattern {
+    position: absolute;
+    inset: 0;
+    background-image: 
+        linear-gradient(rgba(168, 85, 247, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(168, 85, 247, 0.08) 1px, transparent 1px);
+    background-size: 30px 30px;
+    background-repeat: repeat;
+    width: 200%;
+    height: 200%;
+    top: -50%;
+    left: -50%;
+    animation: gridMove 30s linear infinite;
+    will-change: transform;
+}
+
+@keyframes gridMove {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(30px, 30px); }
+}
+
+/* Gradient overlay on top of grid */
 .mesh-gradient {
     position: fixed;
     inset: 0;
-    z-index: -2;
+    z-index: -1;
     background:
-        radial-gradient(at 0% 0%, rgba(168, 85, 247, 0.05) 0, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.05) 0, transparent 50%);
+        radial-gradient(at 0% 0%, rgba(168, 85, 247, 0.15) 0, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.15) 0, transparent 50%);
 }
+
+/* Light theme grid colors */
+[data-theme="light"] .bg-grid-pattern {
+    background-image: 
+        linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px);
+}
+
+[data-theme="light"] .mesh-gradient {
+    background:
+        radial-gradient(at 0% 0%, rgba(168, 85, 247, 0.08) 0, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.08) 0, transparent 50%);
+}
+
+/* Subtle grid glow effect */
+.bg-grid-glow {
+    position: absolute;
+    inset: 0;
+    background: 
+        radial-gradient(ellipse at 20% 50%, rgba(168, 85, 247, 0.04) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 50%, rgba(59, 130, 246, 0.04) 0%, transparent 60%);
+}
+
 .glow-orb {
     position: fixed;
     border-radius: 50%;
     filter: blur(100px);
     z-index: -1;
-    opacity: 0.15;
+    opacity: 0.12;
 }
 .orb-1 { width: 400px; height: 400px; background: var(--accent-primary); top: -100px; left: -100px; }
 .orb-2 { width: 500px; height: 500px; background: var(--accent-secondary); bottom: -150px; right: -150px; }
@@ -138,7 +196,7 @@ body {
 .history-item {
     width: 100%;
     aspect-ratio: 1;
-    border-radius: 12px;
+    border-radius: 8px;
     overflow: hidden;
     border: 1px solid var(--border-color);
     cursor: pointer;
@@ -166,16 +224,34 @@ body {
     -webkit-text-fill-color: transparent;
 }
 
+/* ===== Prompt Card - Full Width with Grid Background ===== */
 .prompt-card {
-    max-width: 850px;
+    max-width: 100%;
     margin: 0 auto 5rem auto;
     background: var(--card-bg);
     border: 1px solid var(--accent-primary);
-    border-radius: 24px;
+    border-radius: 12px;
     padding: 1.5rem;
     backdrop-filter: blur(25px);
     box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), 0 0 20px rgba(168, 85, 247, 0.1);
+    position: relative;
+    overflow: hidden;
 }
+
+
+
+[data-theme="light"] .prompt-card::before {
+    background-image: 
+        linear-gradient(rgba(59, 130, 246, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59, 130, 246, 0.04) 1px, transparent 1px);
+}
+
+/* Ensure content is above the grid */
+.input-wrapper {
+    position: relative;
+    z-index: 1;
+}
+
 .input-wrapper textarea {
     width: 100%;
     height: 120px;
@@ -186,7 +262,10 @@ body {
     resize: none;
     outline: none;
 }
+
 .prompt-footer {
+    position: relative;
+    z-index: 1;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -214,7 +293,7 @@ body {
     color: white;
     border: none;
     padding: 0.8rem 2rem;
-    border-radius: 14px;
+    border-radius: 12px;
     font-weight: 700;
     cursor: pointer;
     transition: 0.3s;
@@ -252,7 +331,7 @@ body {
     gap: 6px;
     background: var(--glass-bg);
     padding: 6px;
-    border-radius: 12px;
+    border-radius: 10px;
     border: 1px solid var(--border-color);
 }
 .ratio-grid { grid-template-columns: repeat(3, 1fr); }
@@ -307,7 +386,7 @@ body {
 .result-card {
     background: var(--card-bg);
     border: 1px solid var(--border-color);
-    border-radius: 20px;
+    border-radius: 12px;
     overflow: hidden;
     position: relative;
     transition: 0.4s;
@@ -461,7 +540,7 @@ body {
     background: var(--card-bg);
     color: var(--text-main);
     padding: 1rem 1.5rem;
-    border-radius: 15px;
+    border-radius: 12px;
     border-left: 4px solid var(--accent-primary);
     backdrop-filter: blur(20px);
     margin-top: 10px;
@@ -572,7 +651,7 @@ body {
     margin: 0 auto 3rem auto;
     background: var(--card-bg);
     border: 1px solid var(--border-color);
-    border-radius: 24px;
+    border-radius: 12px;
     padding: 2rem;
     backdrop-filter: blur(25px);
     box-shadow: var(--shadow);
@@ -613,7 +692,7 @@ body {
 
 @media (max-width: 600px) {
     .hero h1 { font-size: 2.2rem; }
-    .prompt-card { padding: 1rem; margin: 0 10px 3rem 10px; }
+    .prompt-card { padding: 1rem; margin: 0 0 3rem 0; }
     .footer-links { gap: 1rem; }
     .settings-container { padding: 1rem; }
 }
@@ -635,7 +714,7 @@ body {
     background: var(--card-bg);
     backdrop-filter: blur(30px);
     border: 1px solid var(--border-color);
-    border-radius: 24px;
+    border-radius: 16px;
     padding: 2rem 2.5rem;
     max-width: 400px;
     width: 90%;
@@ -664,7 +743,7 @@ body {
 .modal-btn {
     padding: 0.6rem 1.8rem;
     border: none;
-    border-radius: 12px;
+    border-radius: 10px;
     font-weight: 600;
     font-size: 0.9rem;
     cursor: pointer;
@@ -724,69 +803,4 @@ body {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-}
-
-/* PWA Banner Animation */
-@keyframes slideUpBanner {
-    from {
-        transform: translateX(-50%) translateY(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(-50%) translateY(0);
-        opacity: 1;
-    }
-}
-
-/* PWA Banner Button Hover */
-#pwa-install-btn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 6px 20px rgba(168, 85, 247, 0.4);
-}
-
-#pwa-close-btn:hover {
-    background: var(--border-color);
-    color: var(--text-main);
-}
-
-#pwa-update-btn:hover {
-    transform: scale(1.05);
-    opacity: 0.9;
-}
-
-/* Mobile responsive */
-@media (max-width: 480px) {
-    #pwa-banner {
-        padding: 0.8rem 1rem;
-        bottom: 16px;
-        border-radius: 16px;
-    }
-    #pwa-banner .app-icon {
-        width: 44px;
-        height: 44px;
-    }
-    #pwa-banner .app-icon svg {
-        width: 22px;
-        height: 22px;
-    }
-    #pwa-banner .title {
-        font-size: 0.9rem;
-    }
-    #pwa-banner .subtitle {
-        font-size: 0.75rem;
-    }
-    #pwa-install-btn {
-        padding: 0.4rem 1rem;
-        font-size: 0.8rem;
-    }
-    #pwa-close-btn {
-        width: 34px;
-        height: 34px;
-        font-size: 1rem;
-    }
-    #pwa-update {
-        bottom: 80px;
-        padding: 0.6rem 1rem;
-        font-size: 0.8rem;
-    }
 }
