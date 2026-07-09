@@ -1,12 +1,12 @@
 /**
- * GENEXUS UI - Core logic
- * Handles image generation, theme switching, history, and the mobile settings drawer.
+ * GENEXUS UI - Core logic with IndexedDB persistence
+ * Manages image generation, history, settings, and theme with permanent storage.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
 
-    // DOM references
+    // ---- DOM refs ----
     const els = {
         promptInput: document.getElementById('prompt-input'),
         btnGenerate: document.getElementById('btn-generate'),
@@ -33,96 +33,445 @@ document.addEventListener('DOMContentLoaded', () => {
         clearHistoryBtn: document.getElementById('clear-history')
     };
 
-    // Application state
+    // ---- Application state (runtime) ----
     const state = {
         width: 512,
         height: 512,
         count: 1,
         quality: 'medium',
-        history: JSON.parse(localStorage.getItem('genexus_history')) || []
+        theme: 'dark',
+        images: []          // will hold { id, prompt, url, timestamp }
     };
 
-    // A small collection of interesting prompts to get started
-    const premiumPrompts = [
-    // CINEMATIC & REALISM
-    "Cyberpunk street photography, neon signage, rain-slicked pavement, cinematic lighting, 8k, hyper-realistic",
-    "Portrait of a rugged Viking warrior, battle-worn face, intense eyes, snow falling, cinematic lighting, ultra-detailed",
-    "A futuristic metropolis at sunset, flying vehicles, massive skyscrapers, volumetric fog, cinematic wide shot, 8k",
-    "Deep sea exploration, bioluminescent creatures, glowing jellyfish, dark abyss, hyper-realistic, macro photography",
-    "Abandoned gothic cathedral, sunbeams breaking through dust, cinematic atmosphere, epic scale, highly detailed",
-    "Classic Hollywood noir, 1940s detective, shadows and light, smoke, high contrast, cinematic film grain",
-    "Hyper-realistic close-up of a human eye, reflecting a galaxy, extreme macro, intricate iris details, 8k",
-    "A majestic lion in the savanna, golden hour, dust particles in sunlight, National Geographic style, 8k",
-    "Vintage luxury car driving through the Amalfi Coast, sun flare, cinematic motion blur, high fidelity",
-    "A futuristic soldier in sleek carbon fiber armor, standing in a desert, cinematic lighting, unreal engine 5",
+    // ---- IndexedDB helpers ----
+    const DB_NAME = 'GenexusDB';
+    const DB_VERSION = 1;
+    let db = null;
 
-    // FANTASY & MYTHOLOGY
-    "Majestic floating islands with cascading waterfalls, ethereal atmosphere, fantasy landscape, volumetric lighting",
-    "Ancient mystical forest, glowing bioluminescent flora, mythical creatures, fantasy art, epic composition",
-    "A majestic dragon made of crystalline ice, breathing frost, mountain peak, hyper-realistic, 8k",
-    "Ethereal goddess of the moon, flowing silver hair, starlight, celestial atmosphere, digital art masterpiece",
-    "An enchanted library with flying books, magical glowing particles, dark academia aesthetic, highly detailed",
-    "A phoenix rising from golden ashes, intense fire effects, cinematic composition, mythical creature, 8k",
-    "Underground elven city, glowing crystals, intricate architecture, fantasy concept art, masterpiece",
-    "A knight in glowing holy armor, standing before a massive dragon, epic fantasy battle, cinematic scale",
-    "Floating steampunk city in the clouds, brass machinery, airships, Victorian fantasy, highly detailed",
-    "A dark sorcerer summoning a storm, lightning bolts, swirling magic energy, epic fantasy, 8k",
-
-    // SCI-FI & FUTURISM
-    "Portrait of a futuristic cyborg queen, intricate gold filigree, glowing eyes, unreal engine 5 render, masterpiece",
-    "Astronaut floating in a sea of liquid gold, surrealism, cosmic nebula background, dreamlike, highly detailed",
-    "Macro photography of a futuristic microchip, glowing circuits, depth of field, highly detailed, tech aesthetic",
-    "Inside a massive spaceship engine room, glowing plasma, industrial sci-fi, cinematic lighting, 8k",
-    "A humanoid robot painting on a canvas, human-like emotions, futuristic studio, soft lighting, masterpiece",
-    "Cybernetic jungle, mechanical plants, neon vines, futuristic biology, highly detailed, 8k",
-    "Interstellar wormhole, swirling stars and galaxies, cosmic scale, psychedelic colors, hyper-realistic",
-    "A futuristic laboratory, holographic displays, clean white aesthetic, sci-fi minimalism, high fidelity",
-    "Space station orbiting a black hole, event horizon, intense gravitational lensing, cinematic sci-fi",
-    "A sleek futuristic supercar, glowing LED lines, dark rainy city, cyberpunk aesthetic, 8k",
-
-    // SURREALISM & ARTISTIC
-    "Minimalist architecture, brutalist concrete, desert landscape, soft sunlight, architectural photography, high fidelity",
-    "A clock melting over a giant desert flower, Salvador Dali style, surrealism, dreamlike atmosphere",
-    "A whale flying through a sky of clouds, dreamlike, ethereal, surrealism, soft pastel colors",
-    "Human silhouette made of shattering glass, light refraction, surrealism, highly detailed, 8k",
-    "A tree where leaves are glowing butterflies, magical realism, soft bokeh, dreamlike, masterpiece",
-    "Abstract explosion of liquid colors, silk textures, flowing movement, macro, high resolution",
-    "A city built inside a giant glass sphere, floating in space, surrealism, intricate details, 8k",
-    "Dreamscape of a staircase leading to the moon, surrealism, ethereal lighting, masterpiece",
-    "A mountain made of giant books, surreal landscape, magical atmosphere, highly detailed",
-    "Ocean waves made of liquid diamonds, sparkling sunlight, surrealism, hyper-realistic, 8k",
-
-    // ANIME & DIGITAL ART
-    "Anime style landscape, Studio Ghibli aesthetic, lush green meadows, soft sunlight, peaceful atmosphere",
-    "Cyberpunk anime girl, neon hair, futuristic street, vibrant colors, high quality digital art",
-    "Epic anime battle, energy beams, dynamic motion, intense colors, high fidelity digital art",
-    "Makoto Shinkai style sky, beautiful clouds, sunset, emotional atmosphere, high quality anime art",
-    "Cute chibi character in a magical forest, vibrant colors, 3D render style, masterpiece"
-];
-
-    // ----- Theme handling -----
-    function initTheme() {
-        const saved = localStorage.getItem('genexus_theme') || 'dark';
-        document.documentElement.setAttribute('data-theme', saved);
-        updateThemeIcon(saved);
+    function openDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, DB_VERSION);
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains('images')) {
+                    const store = db.createObjectStore('images', { keyPath: 'id', autoIncrement: true });
+                    store.createIndex('timestamp', 'timestamp');
+                }
+                if (!db.objectStoreNames.contains('settings')) {
+                    db.createObjectStore('settings', { keyPath: 'key' });
+                }
+            };
+            request.onsuccess = (e) => {
+                db = e.target.result;
+                resolve(db);
+            };
+            request.onerror = (e) => reject(e.target.error);
+        });
     }
+
+    function dbPut(storeName, data) {
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(storeName, 'readwrite');
+            const store = tx.objectStore(storeName);
+            const req = store.put(data);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    function dbGetAll(storeName) {
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(storeName, 'readonly');
+            const store = tx.objectStore(storeName);
+            const req = store.getAll();
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    function dbDelete(storeName, id) {
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(storeName, 'readwrite');
+            const store = tx.objectStore(storeName);
+            const req = store.delete(id);
+            req.onsuccess = () => resolve();
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    function dbGet(storeName, key) {
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(storeName, 'readonly');
+            const store = tx.objectStore(storeName);
+            const req = store.get(key);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    // ---- Save / load settings ----
+    async function saveSettings() {
+        if (!db) return;
+        const settings = {
+            key: 'app-settings',
+            width: state.width,
+            height: state.height,
+            count: state.count,
+            quality: state.quality,
+            theme: state.theme
+        };
+        await dbPut('settings', settings);
+    }
+
+    async function loadSettings() {
+        if (!db) return;
+        const saved = await dbGet('settings', 'app-settings');
+        if (saved) {
+            state.width = saved.width || 512;
+            state.height = saved.height || 512;
+            state.count = saved.count || 1;
+            state.quality = saved.quality || 'medium';
+            state.theme = saved.theme || 'dark';
+            // apply to UI
+            applySettingsToUI();
+            applyTheme(state.theme);
+        }
+    }
+
+    function applySettingsToUI() {
+        // Ratio buttons
+        els.ratioBtns.forEach(btn => {
+            const w = parseInt(btn.dataset.w);
+            const h = parseInt(btn.dataset.h);
+            if (w === state.width && h === state.height) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+        // Quality buttons
+        els.qualityBtns.forEach(btn => {
+            if (btn.dataset.quality === state.quality) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+        // Count buttons
+        els.countBtns.forEach(btn => {
+            if (parseInt(btn.dataset.count) === state.count) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    }
+
+    function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        updateThemeIcon(theme);
+    }
+
+    // ---- Image storage ----
+    async function saveImageToDB(prompt, dataUrl) {
+        if (!db) return null;
+        const entry = {
+            prompt: prompt,
+            url: dataUrl,          // base64 encoded image
+            timestamp: Date.now()
+        };
+        const id = await dbPut('images', entry);
+        return id;
+    }
+
+    async function loadAllImages() {
+        if (!db) return [];
+        const all = await dbGetAll('images');
+        // sort by timestamp descending (newest first)
+        all.sort((a, b) => b.timestamp - a.timestamp);
+        return all;
+    }
+
+    async function deleteImageFromDB(id) {
+        if (!db) return;
+        await dbDelete('images', id);
+    }
+
+    // ---- Render gallery from DB ----
+    async function renderGallery() {
+        const images = await loadAllImages();
+        state.images = images;
+        els.resultsGrid.innerHTML = '';
+        if (images.length === 0) {
+            els.emptyState.classList.remove('hidden');
+            return;
+        }
+        els.emptyState.classList.add('hidden');
+        images.forEach(img => {
+            const card = createResultCard(img.url, img.prompt, img.id);
+            els.resultsGrid.appendChild(card);
+        });
+        // re-create lucide icons for new cards
+        lucide.createIcons();
+    }
+
+    // ---- Create result card with delete button ----
+    function createResultCard(url, prompt, id) {
+        const card = document.createElement('div');
+        card.className = 'result-card';
+        card.dataset.id = id;
+        card.innerHTML = `
+            <img src="${url}" alt="AI generated artwork" loading="lazy" />
+            <div class="result-overlay">
+                <button class="action-icon-btn dl-btn" title="Download"><i data-lucide="download"></i></button>
+                <button class="action-icon-btn cp-btn" title="Copy Prompt"><i data-lucide="copy"></i></button>
+                <button class="action-icon-btn del-btn" title="Delete"><i data-lucide="trash-2"></i></button>
+            </div>
+        `;
+        // Download
+        card.querySelector('.dl-btn').onclick = (e) => {
+            e.stopPropagation();
+            download(url);
+        };
+        // Copy prompt
+        card.querySelector('.cp-btn').onclick = (e) => {
+            e.stopPropagation();
+            navigator.clipboard.writeText(prompt);
+            showToast('Prompt copied!');
+        };
+        // Delete with confirmation
+        const delBtn = card.querySelector('.del-btn');
+        delBtn.onclick = (e) => {
+            e.stopPropagation();
+            showDeleteConfirmation(id, card);
+        };
+        return card;
+    }
+
+    // ---- Delete confirmation modal ----
+    function showDeleteConfirmation(id, cardElement) {
+        // Create modal overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.innerHTML = `
+            <div class="modal-box">
+                <h3>Delete Image</h3>
+                <p>Are you sure you want to delete this image permanently?</p>
+                <div class="modal-actions">
+                    <button class="modal-btn cancel-btn">Cancel</button>
+                    <button class="modal-btn confirm-btn">Delete</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        const cancelBtn = overlay.querySelector('.cancel-btn');
+        const confirmBtn = overlay.querySelector('.confirm-btn');
+
+        const closeModal = () => {
+            overlay.remove();
+        };
+
+        cancelBtn.onclick = closeModal;
+        // Click outside to close
+        overlay.onclick = (e) => {
+            if (e.target === overlay) closeModal();
+        };
+
+        confirmBtn.onclick = async () => {
+            try {
+                await deleteImageFromDB(id);
+                // Remove card from DOM
+                if (cardElement && cardElement.parentNode) {
+                    cardElement.remove();
+                }
+                // Check if gallery is empty
+                if (els.resultsGrid.children.length === 0) {
+                    els.emptyState.classList.remove('hidden');
+                }
+                showToast('Image deleted.');
+            } catch (err) {
+                console.error('Delete error:', err);
+                showToast('Failed to delete image.', 'error');
+            }
+            closeModal();
+        };
+    }
+
+    // ---- Toast ----
+    function showToast(msg, type = 'success') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerText = msg;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    // ---- Download helper ----
+    async function download(url) {
+        try {
+            const res = await fetch(url);
+            const blob = await res.blob();
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `genexus-${Date.now()}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showToast('Download started!');
+        } catch (e) {
+            showToast('Download failed.', 'error');
+        }
+    }
+
+    // ---- Generation ----
+    els.btnGenerate.onclick = generateImages;
+
+    async function generateImages() {
+        const prompt = els.promptInput.value.trim();
+        if (!prompt) return showToast('Please enter a prompt!', 'error');
+
+        setLoading(true);
+
+        const qualityMap = {
+            low: 'simple, basic',
+            medium: 'highly detailed, 4k',
+            high: 'masterpiece, ultra-detailed, cinematic lighting, 8k, hyper-realistic, intricate textures'
+        };
+        const style = els.selectStyle.value;
+        const finalPrompt = `${prompt}, ${qualityMap[state.quality]} ${style}`.trim();
+        const seed = els.inputSeed.value || Math.floor(Math.random() * 1000000);
+
+        try {
+            const tasks = [];
+            for (let i = 0; i < state.count; i++) {
+                tasks.push(fetchImage(finalPrompt, seed + i));
+            }
+            const urls = await Promise.all(tasks);
+            const validUrls = urls.filter(u => u !== null);
+
+            if (validUrls.length === 0) throw new Error('API returned no images');
+
+            // Save each image to IndexedDB as base64
+            for (let url of validUrls) {
+                // Convert blob URL or data URL to base64 if needed
+                let dataUrl = url;
+                if (url.startsWith('blob:')) {
+                    const resp = await fetch(url);
+                    const blob = await resp.blob();
+                    dataUrl = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.readAsDataURL(blob);
+                    });
+                } else if (!url.startsWith('data:image')) {
+                    // fallback: fetch as blob then to dataURL
+                    const resp = await fetch(url);
+                    const blob = await resp.blob();
+                    dataUrl = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.readAsDataURL(blob);
+                    });
+                }
+                await saveImageToDB(prompt, dataUrl);
+            }
+
+            // Re-render gallery
+            await renderGallery();
+            showToast(`Generated ${validUrls.length} images!`);
+            closeDrawer();
+
+        } catch (err) {
+            console.error(err);
+            showToast('Generation failed. Try again.', 'error');
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    // ---- API call with Flux model ----
+    async function fetchImage(prompt, seed) {
+        const baseUrl = 'https://genexus-ai.onrender.com/api/images/generate';
+        const params = new URLSearchParams({
+            prompt,
+            model: 'flux',
+            seed,
+            width: state.width,
+            height: state.height
+        });
+
+        try {
+            const res = await fetch(`${baseUrl}?${params.toString()}`);
+            if (!res.ok) return null;
+            const type = res.headers.get('content-type');
+
+            if (type?.includes('application/json')) {
+                const data = await res.json();
+                return data.url || data.image || data.imageUrl || null;
+            }
+            if (type?.includes('image')) {
+                const blob = await res.blob();
+                return URL.createObjectURL(blob);
+            }
+            const text = await res.text();
+            return text.startsWith('data:image') ? text : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function setLoading(isLoading) {
+        els.btnGenerate.disabled = isLoading;
+        els.genText.classList.toggle('hidden', isLoading);
+        els.genLoader.classList.toggle('hidden', !isLoading);
+    }
+
+    // ---- Theme toggle ----
+    els.btnTheme.onclick = async () => {
+        const current = document.documentElement.getAttribute('data-theme');
+        const next = current === 'dark' ? 'light' : 'dark';
+        state.theme = next;
+        applyTheme(next);
+        await saveSettings();
+    };
 
     function updateThemeIcon(theme) {
         els.btnTheme.innerHTML = theme === 'dark' ? '<i data-lucide="sun"></i>' : '<i data-lucide="moon"></i>';
         lucide.createIcons();
     }
 
-    initTheme();
+    // ---- Settings listeners (save to DB on change) ----
+    els.ratioBtns.forEach(btn => {
+        btn.onclick = async () => {
+            els.ratioBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            state.width = parseInt(btn.dataset.w);
+            state.height = parseInt(btn.dataset.h);
+            await saveSettings();
+        };
+    });
 
-    els.btnTheme.onclick = () => {
-        const current = document.documentElement.getAttribute('data-theme');
-        const next = current === 'dark' ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', next);
-        localStorage.setItem('genexus_theme', next);
-        updateThemeIcon(next);
-    };
+    els.qualityBtns.forEach(btn => {
+        btn.onclick = async () => {
+            els.qualityBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            state.quality = btn.dataset.quality;
+            await saveSettings();
+        };
+    });
 
-    // ----- Mobile drawer (bottom sheet) with drag handle -----
+    els.countBtns.forEach(btn => {
+        btn.onclick = async () => {
+            els.countBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            state.count = parseInt(btn.dataset.count);
+            await saveSettings();
+        };
+    });
+
+    // ---- Mobile drawer ----
     let isDragging = false;
     let dragStartY = 0;
     let drawerOffset = 0;
@@ -193,194 +542,51 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isDragging) e.preventDefault();
     }, { passive: false });
 
-    // ----- Image generation -----
-    els.btnGenerate.onclick = generateImages;
+    // ---- Random prompt ----
+    const premiumPrompts = [
+        "Cyberpunk street photography, neon signage, rain-slicked pavement, cinematic lighting, 8k, hyper-realistic",
+        "Majestic floating islands with cascading waterfalls, ethereal atmosphere, fantasy landscape, volumetric lighting",
+        "Portrait of a futuristic cyborg queen, intricate gold filigree, glowing eyes, unreal engine 5 render, masterpiece",
+        "Minimalist architecture, brutalist concrete, desert landscape, soft sunlight, architectural photography, high fidelity",
+        "Astronaut floating in a sea of liquid gold, surrealism, cosmic nebula background, dreamlike, highly detailed",
+        "Ancient mystical forest, glowing bioluminescent flora, mythical creatures, fantasy art, epic composition",
+        "Steampunk flying machine navigating through clouds, Victorian aesthetics, intricate mechanical details, cinematic",
+        "A majestic dragon made of crystalline ice, breathing frost, mountain peak, hyper-realistic, 8k",
+        "Macro photography of a futuristic microchip, glowing circuits, depth of field, highly detailed, tech aesthetic",
+        "Ethereal goddess of the moon, flowing silver hair, starlight, celestial atmosphere, digital art masterpiece"
+    ];
 
-    async function generateImages() {
-        const prompt = els.promptInput.value.trim();
-        if (!prompt) return showToast('Please enter a prompt!', 'error');
-
-        setLoading(true);
-
-        const qualityMap = {
-            low: 'simple, basic',
-            medium: 'highly detailed, 4k',
-            high: 'masterpiece, ultra-detailed, cinematic lighting, 8k, hyper-realistic, intricate textures'
-        };
-        const style = els.selectStyle.value;
-        const finalPrompt = `${prompt}, ${qualityMap[state.quality]} ${style}`.trim();
-        const seed = els.inputSeed.value || Math.floor(Math.random() * 1000000);
-
-        try {
-            const tasks = [];
-            for (let i = 0; i < state.count; i++) {
-                tasks.push(fetchImage(finalPrompt, seed + i));
-            }
-            const urls = await Promise.all(tasks);
-            const validUrls = urls.filter(u => u !== null);
-
-            if (validUrls.length === 0) throw new Error('API returned no images');
-
-            els.emptyState.classList.add('hidden');
-            validUrls.forEach(url => {
-                const card = createResultCard(url, prompt);
-                els.resultsGrid.prepend(card);
-            });
-
-            if (validUrls[0]) addToHistory(prompt, validUrls[0]);
-            showToast(`Generated ${validUrls.length} images!`);
-            closeDrawer();
-
-        } catch (err) {
-            console.error(err);
-            showToast('Generation failed. Try again.', 'error');
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    // Calls the backend API using the Flux model
-    async function fetchImage(prompt, seed) {
-        const baseUrl = 'https://genexus-ai.onrender.com/api/images/generate';
-        const params = new URLSearchParams({
-            prompt,
-            model: 'flux',
-            seed,
-            width: state.width,
-            height: state.height
-        });
-
-        try {
-            const res = await fetch(`${baseUrl}?${params.toString()}`);
-            if (!res.ok) return null;
-            const type = res.headers.get('content-type');
-
-            if (type?.includes('application/json')) {
-                const data = await res.json();
-                return data.url || data.image || data.imageUrl || null;
-            }
-            if (type?.includes('image')) {
-                const blob = await res.blob();
-                return URL.createObjectURL(blob);
-            }
-            const text = await res.text();
-            return text.startsWith('data:image') ? text : null;
-        } catch (e) {
-            return null;
-        }
-    }
-
-    // ----- UI components -----
-    function createResultCard(url, prompt) {
-        const card = document.createElement('div');
-        card.className = 'result-card';
-        card.innerHTML = `
-            <img src="${url}" alt="AI generated artwork" loading="lazy" />
-            <div class="result-overlay">
-                <button class="action-icon-btn dl-btn" title="Download"><i data-lucide="download"></i></button>
-                <button class="action-icon-btn cp-btn" title="Copy Prompt"><i data-lucide="copy"></i></button>
-            </div>
-        `;
-        setTimeout(() => lucide.createIcons(), 0);
-
-        card.querySelector('.dl-btn').onclick = () => download(url);
-        card.querySelector('.cp-btn').onclick = () => {
-            navigator.clipboard.writeText(prompt);
-            showToast('Prompt copied!');
-        };
-        return card;
-    }
-
-    function setLoading(isLoading) {
-        els.btnGenerate.disabled = isLoading;
-        els.genText.classList.toggle('hidden', isLoading);
-        els.genLoader.classList.toggle('hidden', !isLoading);
-    }
-
-    async function download(url) {
-        try {
-            const res = await fetch(url);
-            const blob = await res.blob();
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `genexus-${Date.now()}.png`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            showToast('Download started!');
-        } catch (e) {
-            showToast('Download failed.', 'error');
-        }
-    }
-
-    // ----- Settings controls -----
-    els.ratioBtns.forEach(btn => {
-        btn.onclick = () => {
-            els.ratioBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            state.width = parseInt(btn.dataset.w);
-            state.height = parseInt(btn.dataset.h);
-        };
-    });
-
-    els.qualityBtns.forEach(btn => {
-        btn.onclick = () => {
-            els.qualityBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            state.quality = btn.dataset.quality;
-        };
-    });
-
-    els.countBtns.forEach(btn => {
-        btn.onclick = () => {
-            els.countBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            state.count = parseInt(btn.dataset.count);
-        };
-    });
-
-    // ----- History (stored in localStorage) -----
-    function addToHistory(prompt, img) {
-        state.history.unshift({ prompt, img });
-        if (state.history.length > 20) state.history.pop();
-        localStorage.setItem('genexus_history', JSON.stringify(state.history));
-        renderHistory();
-    }
-
-    function renderHistory() {
-        els.historyList.innerHTML = state.history.length
-            ? ''
-            : '<p style="text-align:center; font-size:0.8rem; color:var(--text-muted);">No history</p>';
-        state.history.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'history-item';
-            div.innerHTML = `<img src="${item.img}" loading="lazy" />`;
-            div.onclick = () => { els.promptInput.value = item.prompt; };
-            els.historyList.appendChild(div);
-        });
-    }
-    renderHistory();
-
-    // ----- Toast notifications -----
-    function showToast(msg, type = 'success') {
-        const container = document.getElementById('toast-container');
-        const toast = document.createElement('div');
-        toast.className = `toast ${type}`;
-        toast.innerText = msg;
-        container.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
-    }
-
-    // ----- Extra controls -----
-    els.btnGallery.onclick = () => els.gallerySection.scrollIntoView({ behavior: 'smooth' });
-    els.btnClear.onclick = () => els.promptInput.value = '';
     els.btnRandom.onclick = () => {
         const s = premiumPrompts[Math.floor(Math.random() * premiumPrompts.length)];
         els.promptInput.value = s;
     };
-    els.clearHistoryBtn.onclick = () => {
-        state.history = [];
-        localStorage.removeItem('genexus_history');
-        renderHistory();
+    els.btnClear.onclick = () => els.promptInput.value = '';
+    els.btnGallery.onclick = () => els.gallerySection.scrollIntoView({ behavior: 'smooth' });
+
+    // ---- Clear history (clear all images) ----
+    els.clearHistoryBtn.onclick = async () => {
+        if (!db) return;
+        const images = await loadAllImages();
+        if (images.length === 0) return;
+        // Confirm
+        if (!confirm('Delete all images from history?')) return;
+        for (let img of images) {
+            await dbDelete('images', img.id);
+        }
+        await renderGallery();
+        showToast('History cleared.');
     };
+
+    // ---- Init ----
+    async function init() {
+        await openDB();
+        await loadSettings();
+        await renderGallery();
+        // update theme icon
+        updateThemeIcon(state.theme);
+        // apply current theme
+        document.documentElement.setAttribute('data-theme', state.theme);
+    }
+
+    init().catch(console.error);
 });
