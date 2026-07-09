@@ -633,4 +633,141 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     init().catch(console.error);
+    
+    // =============================================
+// PWA - Progressive Web App Functionality
+// =============================================
+
+// ----- PWA Install Button Handling -----
+let deferredPrompt = null;
+const pwaNotification = document.getElementById('pwa-notification');
+const pwaInstallBtn = document.getElementById('pwa-install-btn');
+const pwaCloseBtn = document.getElementById('pwa-close-btn');
+const updateNotification = document.getElementById('update-notification');
+const updateRefreshBtn = document.getElementById('update-refresh-btn');
+
+// Show install notification
+function showPWAInstallNotification() {
+    if (pwaNotification) {
+        pwaNotification.style.display = 'flex';
+    }
+}
+
+function hidePWAInstallNotification() {
+    if (pwaNotification) {
+        pwaNotification.style.display = 'none';
+    }
+}
+
+function showUpdateNotification() {
+    if (updateNotification) {
+        updateNotification.style.display = 'flex';
+    }
+}
+
+function hideUpdateNotification() {
+    if (updateNotification) {
+        updateNotification.style.display = 'none';
+    }
+}
+
+// Listen for beforeinstallprompt event
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    showPWAInstallNotification();
 });
+
+// Install button click handler
+if (pwaInstallBtn) {
+    pwaInstallBtn.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const result = await deferredPrompt.userChoice;
+            if (result.outcome === 'accepted') {
+                console.log('User accepted the install prompt');
+                hidePWAInstallNotification();
+            } else {
+                console.log('User dismissed the install prompt');
+            }
+            deferredPrompt = null;
+        }
+    });
+}
+
+// Close notification button
+if (pwaCloseBtn) {
+    pwaCloseBtn.addEventListener('click', hidePWAInstallNotification);
+}
+
+// Detect app installed
+window.addEventListener('appinstalled', () => {
+    console.log('GENEXUS UI was installed');
+    hidePWAInstallNotification();
+    showToast('App installed successfully! 🎉');
+});
+
+// ----- Service Worker Registration -----
+if ('serviceWorker' in navigator) {
+    const isLocalhost = window.location.hostname === 'localhost' || 
+                        window.location.hostname === '127.0.0.1';
+    
+    navigator.serviceWorker.register('./service-worker.js')
+        .then((registration) => {
+            console.log('Service Worker registered successfully');
+            
+            // Check for updates
+            registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        showUpdateNotification();
+                    }
+                });
+            });
+            
+            // Check for updates every 60 seconds
+            setInterval(() => {
+                registration.update();
+            }, 60000);
+        })
+        .catch((error) => {
+            if (!isLocalhost) {
+                console.log('Service Worker registration failed:', error);
+            } else {
+                console.log('Service Worker not registered (localhost mode)');
+            }
+        });
+}
+
+// Update refresh button
+if (updateRefreshBtn) {
+    updateRefreshBtn.addEventListener('click', () => {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistration().then((registration) => {
+                if (registration && registration.waiting) {
+                    registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                }
+            });
+        }
+        hideUpdateNotification();
+        window.location.reload();
+    });
+}
+
+// Check if running standalone (PWA mode)
+if (window.matchMedia('(display-mode: standalone)').matches) {
+    console.log('Running as installed PWA');
+    hidePWAInstallNotification();
+}
+
+// Handle offline/online status
+window.addEventListener('online', () => {
+    showToast('Back online! 🌐');
+});
+
+window.addEventListener('offline', () => {
+    showToast('You are offline. Using cached content.', 'error');
+});
+});
+

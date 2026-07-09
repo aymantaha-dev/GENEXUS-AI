@@ -1,0 +1,19 @@
+{
+  "name": "GENEXUS UI - AI Image Generator",
+  "short_name": "GENEXUS UI",
+  "description": "Professional AI image generation interface with Flux-Schnell engine",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#030303",
+  "theme_color": "#a855f7",
+  "categories": ["art", "design", "productivity", "ai"],
+  "icons": [
+    {
+      "src": "./icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

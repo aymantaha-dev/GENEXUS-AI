@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>GENEXUS UI | Pro AI</title>
+    <link rel="manifest" href="./manifest.json">
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -154,14 +155,28 @@
                 <a href="https://github.com/aymantaha-dev/GENEXUS-AI" target="_blank" rel="noopener" class="github-link">
                     <i data-lucide="github"></i> View on GitHub
                 </a>
-                <!-- Credit badge – developed by KivodeAI -->
+                <!-- Credit badge -->
                 <div class="footer-credit">
                     <span>Developed from scratch by <strong>KivodeAI</strong> — coming soon.</span>
                 </div>
             </div>
         </div>
     </footer>
+    
+<!-- PWA Install and Update Notifications -->
+<div id="pwa-notification" style="display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--border-color); border-radius: 16px; padding: 1rem 1.5rem; box-shadow: 0 20px 60px rgba(0,0,0,0.5); max-width: 90%; align-items: center; gap: 1rem;">
+    <div>
+        <strong style="color: var(--text-main); display: block;">Install GENEXUS UI</strong>
+        <span style="color: var(--text-muted); font-size: 0.85rem;">Get the app for a better experience</span>
+    </div>
+    <button id="pwa-install-btn" style="background: linear-gradient(135deg, #a855f7, #3b82f6); color: white; border: none; padding: 0.5rem 1.5rem; border-radius: 10px; font-weight: 600; cursor: pointer;">Install</button>
+    <button id="pwa-close-btn" style="background: none; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer; padding: 0 0.5rem;">✕</button>
+</div>
 
+<div id="update-notification" style="display: none; position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 9998; background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--border-color); border-radius: 16px; padding: 0.8rem 1.5rem; box-shadow: 0 20px 60px rgba(0,0,0,0.5); max-width: 90%; align-items: center; gap: 1rem;">
+    <span style="color: var(--text-muted); font-size: 0.9rem;">🔄 New update available</span>
+    <button id="update-refresh-btn" style="background: var(--accent-primary); color: white; border: none; padding: 0.4rem 1.2rem; border-radius: 8px; font-weight: 600; cursor: pointer;">Refresh</button>
+</div>
     <div id="toast-container"></div>
     <script src="script.js"></script>
 </body>
