@@ -1,11 +1,12 @@
 /**
- * GENEXUS UI - Core Engine
- * Professional Grade Implementation
+ * GENEXUS UI - Core logic
+ * Handles image generation, theme switching, history, and the mobile settings drawer.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
 
+    // DOM references
     const els = {
         promptInput: document.getElementById('prompt-input'),
         btnGenerate: document.getElementById('btn-generate'),
@@ -22,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
         settingsDrawer: document.getElementById('settings-drawer'),
         closeSettings: document.getElementById('close-settings'),
         drawerOverlay: document.getElementById('drawer-overlay'),
+        dragHandle: document.getElementById('drag-handle'),
         selectStyle: document.getElementById('select-style'),
         inputSeed: document.getElementById('input-seed'),
         ratioBtns: document.querySelectorAll('.ratio-btn'),
@@ -31,7 +33,8 @@ document.addEventListener('DOMContentLoaded', () => {
         clearHistoryBtn: document.getElementById('clear-history')
     };
 
-    let state = {
+    // Application state
+    const state = {
         width: 512,
         height: 512,
         count: 1,
@@ -39,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
         history: JSON.parse(localStorage.getItem('genexus_history')) || []
     };
 
+    // A small collection of interesting prompts to get started
     const premiumPrompts = [
         "Cyberpunk street photography, neon signage, rain-slicked pavement, cinematic lighting, 8k, hyper-realistic",
         "Majestic floating islands with cascading waterfalls, ethereal atmosphere, fantasy landscape, volumetric lighting",
@@ -52,15 +56,19 @@ document.addEventListener('DOMContentLoaded', () => {
         "Ethereal goddess of the moon, flowing silver hair, starlight, celestial atmosphere, digital art masterpiece"
     ];
 
-    initTheme();
-    renderHistory();
-
-    // --- Theme Logic ---
+    // ----- Theme handling -----
     function initTheme() {
         const saved = localStorage.getItem('genexus_theme') || 'dark';
         document.documentElement.setAttribute('data-theme', saved);
         updateThemeIcon(saved);
     }
+
+    function updateThemeIcon(theme) {
+        els.btnTheme.innerHTML = theme === 'dark' ? '<i data-lucide="sun"></i>' : '<i data-lucide="moon"></i>';
+        lucide.createIcons();
+    }
+
+    initTheme();
 
     els.btnTheme.onclick = () => {
         const current = document.documentElement.getAttribute('data-theme');
@@ -70,36 +78,91 @@ document.addEventListener('DOMContentLoaded', () => {
         updateThemeIcon(next);
     };
 
-    function updateThemeIcon(theme) {
-        els.btnTheme.innerHTML = theme === 'dark' ? `<i data-lucide="sun"></i>` : `<i data-lucide="moon"></i>`;
-        lucide.createIcons();
+    // ----- Mobile drawer (bottom sheet) with drag handle -----
+    let isDragging = false;
+    let dragStartY = 0;
+    let drawerOffset = 0;
+
+    function openDrawer() {
+        els.settingsDrawer.classList.add('active');
+        els.drawerOverlay.classList.add('active');
+        els.settingsDrawer.style.transform = 'translateY(0)';
+        drawerOffset = 0;
+        document.body.style.overflow = 'hidden';
     }
 
-    // --- Mobile Drawer (Bottom Sheet) Logic ---
-    const toggleDrawer = (show) => {
-        els.settingsDrawer.classList.toggle('active', show);
-        els.drawerOverlay.classList.toggle('active', show);
-    };
+    function closeDrawer() {
+        els.settingsDrawer.classList.remove('active');
+        els.drawerOverlay.classList.remove('active');
+        els.settingsDrawer.style.transform = '';
+        drawerOffset = 0;
+        document.body.style.overflow = '';
+    }
 
-    els.btnSettingsMobile.onclick = () => toggleDrawer(true);
-    els.closeSettings.onclick = () => toggleDrawer(false);
-    els.drawerOverlay.onclick = () => toggleDrawer(false);
+    els.btnSettingsMobile.onclick = openDrawer;
+    els.closeSettings.onclick = closeDrawer;
+    els.drawerOverlay.onclick = closeDrawer;
 
-    // --- Generation Logic ---
+    const handle = els.dragHandle;
+    const drawer = els.settingsDrawer;
+
+    function onDragStart(e) {
+        if (!drawer.classList.contains('active')) return;
+        isDragging = true;
+        dragStartY = e.touches ? e.touches[0].clientY : e.clientY;
+        document.body.style.userSelect = 'none';
+    }
+
+    function onDragMove(e) {
+        if (!isDragging) return;
+        e.preventDefault();
+        const currentY = e.touches ? e.touches[0].clientY : e.clientY;
+        const delta = currentY - dragStartY;
+        const maxOffset = window.innerHeight * 0.4;
+        let newOffset = Math.min(Math.max(0, delta), maxOffset);
+        drawerOffset = newOffset;
+        drawer.style.transform = `translateY(${newOffset}px)`;
+    }
+
+    function onDragEnd(e) {
+        if (!isDragging) return;
+        isDragging = false;
+        document.body.style.userSelect = '';
+        const threshold = window.innerHeight * 0.1;
+        if (drawerOffset > threshold) {
+            closeDrawer();
+        } else {
+            drawer.style.transform = 'translateY(0)';
+            drawerOffset = 0;
+        }
+    }
+
+    handle.addEventListener('mousedown', onDragStart);
+    window.addEventListener('mousemove', onDragMove);
+    window.addEventListener('mouseup', onDragEnd);
+
+    handle.addEventListener('touchstart', onDragStart, { passive: false });
+    window.addEventListener('touchmove', onDragMove, { passive: false });
+    window.addEventListener('touchend', onDragEnd, { passive: false });
+
+    handle.addEventListener('touchmove', (e) => {
+        if (isDragging) e.preventDefault();
+    }, { passive: false });
+
+    // ----- Image generation -----
     els.btnGenerate.onclick = generateImages;
 
     async function generateImages() {
         const prompt = els.promptInput.value.trim();
-        if (!prompt) return showToast("Please enter a prompt!", "error");
+        if (!prompt) return showToast('Please enter a prompt!', 'error');
 
         setLoading(true);
 
         const qualityMap = {
-            low: "simple, basic",
-            medium: "highly detailed, 4k",
-            high: "masterpiece, ultra-detailed, cinematic lighting, 8k, hyper-realistic, intricate textures"
+            low: 'simple, basic',
+            medium: 'highly detailed, 4k',
+            high: 'masterpiece, ultra-detailed, cinematic lighting, 8k, hyper-realistic, intricate textures'
         };
-
         const style = els.selectStyle.value;
         const finalPrompt = `${prompt}, ${qualityMap[state.quality]} ${style}`.trim();
         const seed = els.inputSeed.value || Math.floor(Math.random() * 1000000);
@@ -109,11 +172,10 @@ document.addEventListener('DOMContentLoaded', () => {
             for (let i = 0; i < state.count; i++) {
                 tasks.push(fetchImage(finalPrompt, seed + i));
             }
-
             const urls = await Promise.all(tasks);
             const validUrls = urls.filter(u => u !== null);
 
-            if (validUrls.length === 0) throw new Error("API Failed");
+            if (validUrls.length === 0) throw new Error('API returned no images');
 
             els.emptyState.classList.add('hidden');
             validUrls.forEach(url => {
@@ -123,20 +185,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (validUrls[0]) addToHistory(prompt, validUrls[0]);
             showToast(`Generated ${validUrls.length} images!`);
-            toggleDrawer(false);
+            closeDrawer();
 
         } catch (err) {
             console.error(err);
-            showToast("Generation failed. Try again.", "error");
+            showToast('Generation failed. Try again.', 'error');
         } finally {
             setLoading(false);
         }
     }
 
+    // Calls the backend API using the Flux model
     async function fetchImage(prompt, seed) {
-        const baseUrl = "https://genexus-ai.onrender.com/api/images/generate";
+        const baseUrl = 'https://genexus-ai.onrender.com/api/images/generate';
         const params = new URLSearchParams({
-            prompt, model: "flux", seed,
+            prompt,
+            model: 'flux',
+            seed,
             width: state.width,
             height: state.height
         });
@@ -144,37 +209,40 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch(`${baseUrl}?${params.toString()}`);
             if (!res.ok) return null;
-            const type = res.headers.get("content-type");
+            const type = res.headers.get('content-type');
 
-            if (type?.includes("application/json")) {
+            if (type?.includes('application/json')) {
                 const data = await res.json();
                 return data.url || data.image || data.imageUrl || null;
-            } 
-            if (type?.includes("image")) {
+            }
+            if (type?.includes('image')) {
                 const blob = await res.blob();
                 return URL.createObjectURL(blob);
             }
             const text = await res.text();
             return text.startsWith('data:image') ? text : null;
-        } catch (e) { return null; }
+        } catch (e) {
+            return null;
+        }
     }
 
-    // --- UI Components ---
+    // ----- UI components -----
     function createResultCard(url, prompt) {
         const card = document.createElement('div');
         card.className = 'result-card';
         card.innerHTML = `
-            <img src="${url}" alt="AI Art" loading="lazy">
+            <img src="${url}" alt="AI generated artwork" loading="lazy" />
             <div class="result-overlay">
                 <button class="action-icon-btn dl-btn" title="Download"><i data-lucide="download"></i></button>
                 <button class="action-icon-btn cp-btn" title="Copy Prompt"><i data-lucide="copy"></i></button>
             </div>
         `;
         setTimeout(() => lucide.createIcons(), 0);
+
         card.querySelector('.dl-btn').onclick = () => download(url);
         card.querySelector('.cp-btn').onclick = () => {
             navigator.clipboard.writeText(prompt);
-            showToast("Prompt copied!");
+            showToast('Prompt copied!');
         };
         return card;
     }
@@ -195,13 +263,13 @@ document.addEventListener('DOMContentLoaded', () => {
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            showToast("Download started!");
+            showToast('Download started!');
         } catch (e) {
-            showToast("Download failed.", "error");
+            showToast('Download failed.', 'error');
         }
     }
 
-    // --- Settings Listeners ---
+    // ----- Settings controls -----
     els.ratioBtns.forEach(btn => {
         btn.onclick = () => {
             els.ratioBtns.forEach(b => b.classList.remove('active'));
@@ -227,7 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     });
 
-    // --- History & Utils ---
+    // ----- History (stored in localStorage) -----
     function addToHistory(prompt, img) {
         state.history.unshift({ prompt, img });
         if (state.history.length > 20) state.history.pop();
@@ -236,17 +304,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderHistory() {
-        els.historyList.innerHTML = state.history.length ? '' : '<p style="text-align:center; font-size:0.8rem; color:var(--text-muted);">No history</p>';
+        els.historyList.innerHTML = state.history.length
+            ? ''
+            : '<p style="text-align:center; font-size:0.8rem; color:var(--text-muted);">No history</p>';
         state.history.forEach(item => {
             const div = document.createElement('div');
             div.className = 'history-item';
-            div.innerHTML = `<img src="${item.img}" loading="lazy">`;
+            div.innerHTML = `<img src="${item.img}" loading="lazy" />`;
             div.onclick = () => { els.promptInput.value = item.prompt; };
             els.historyList.appendChild(div);
         });
     }
+    renderHistory();
 
-    function showToast(msg, type = "success") {
+    // ----- Toast notifications -----
+    function showToast(msg, type = 'success') {
         const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
@@ -255,6 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => toast.remove(), 3000);
     }
 
+    // ----- Extra controls -----
     els.btnGallery.onclick = () => els.gallerySection.scrollIntoView({ behavior: 'smooth' });
     els.btnClear.onclick = () => els.promptInput.value = '';
     els.btnRandom.onclick = () => {

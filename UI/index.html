@@ -75,9 +75,13 @@
         </section>
 
         <aside class="sidebar-settings" id="settings-drawer">
-            <div class="settings-header mobile-only">
+            <div class="drag-handle" id="drag-handle">
+                <span class="drag-bar"></span>
+            </div>
+
+            <div class="settings-header">
                 <h3><i data-lucide="sliders-horizontal"></i> Settings</h3>
-                <button id="close-settings" class="btn-close"><i data-lucide="x"></i></button>
+                <button id="close-settings" class="btn-close desktop-only"><i data-lucide="x"></i></button>
             </div>
 
             <div class="settings-container">
@@ -134,7 +138,6 @@
         </aside>
     </main>
 
-    <!-- Footer -->
     <footer class="site-footer">
         <div class="footer-content">
             <div class="footer-brand">
@@ -151,6 +154,10 @@
                 <a href="https://github.com/aymantaha-dev/GENEXUS-AI" target="_blank" rel="noopener" class="github-link">
                     <i data-lucide="github"></i> View on GitHub
                 </a>
+                <!-- Credit badge – developed by KivodeAI -->
+                <div class="footer-credit">
+                    <span>Developed from scratch by <strong>KivodeAI</strong> — coming soon.</span>
+                </div>
             </div>
         </div>
     </footer>
