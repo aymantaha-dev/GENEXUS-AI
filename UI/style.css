@@ -725,3 +725,68 @@ body {
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
+
+/* PWA Banner Animation */
+@keyframes slideUpBanner {
+    from {
+        transform: translateX(-50%) translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+    }
+}
+
+/* PWA Banner Button Hover */
+#pwa-install-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(168, 85, 247, 0.4);
+}
+
+#pwa-close-btn:hover {
+    background: var(--border-color);
+    color: var(--text-main);
+}
+
+#pwa-update-btn:hover {
+    transform: scale(1.05);
+    opacity: 0.9;
+}
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+    #pwa-banner {
+        padding: 0.8rem 1rem;
+        bottom: 16px;
+        border-radius: 16px;
+    }
+    #pwa-banner .app-icon {
+        width: 44px;
+        height: 44px;
+    }
+    #pwa-banner .app-icon svg {
+        width: 22px;
+        height: 22px;
+    }
+    #pwa-banner .title {
+        font-size: 0.9rem;
+    }
+    #pwa-banner .subtitle {
+        font-size: 0.75rem;
+    }
+    #pwa-install-btn {
+        padding: 0.4rem 1rem;
+        font-size: 0.8rem;
+    }
+    #pwa-close-btn {
+        width: 34px;
+        height: 34px;
+        font-size: 1rem;
+    }
+    #pwa-update {
+        bottom: 80px;
+        padding: 0.6rem 1rem;
+        font-size: 0.8rem;
+    }
+}

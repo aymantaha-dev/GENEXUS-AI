@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>GENEXUS UI | Pro AI</title>
-    <link rel="manifest" href="./manifest.json">
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -163,20 +162,37 @@
         </div>
     </footer>
     
-<!-- PWA Install and Update Notifications -->
-<div id="pwa-notification" style="display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--border-color); border-radius: 16px; padding: 1rem 1.5rem; box-shadow: 0 20px 60px rgba(0,0,0,0.5); max-width: 90%; align-items: center; gap: 1rem;">
-    <div>
-        <strong style="color: var(--text-main); display: block;">Install GENEXUS UI</strong>
-        <span style="color: var(--text-muted); font-size: 0.85rem;">Get the app for a better experience</span>
+<!-- PWA Install Banner -->
+<div id="pwa-banner" style="display: none; position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 9999; width: 90%; max-width: 480px; background: var(--card-bg); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border: 1px solid var(--border-color); border-radius: 20px; padding: 1rem 1.5rem; box-shadow: 0 20px 80px rgba(0,0,0,0.6); align-items: center; gap: 1rem; animation: slideUpBanner 0.5s cubic-bezier(0.25, 1, 0.5, 1);">
+    
+    <!-- App Icon -->
+    <div style="flex-shrink: 0; width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg, #a855f7, #3b82f6); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(168, 85, 247, 0.3);">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        </svg>
     </div>
-    <button id="pwa-install-btn" style="background: linear-gradient(135deg, #a855f7, #3b82f6); color: white; border: none; padding: 0.5rem 1.5rem; border-radius: 10px; font-weight: 600; cursor: pointer;">Install</button>
-    <button id="pwa-close-btn" style="background: none; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer; padding: 0 0.5rem;">✕</button>
+
+    <!-- Text Content -->
+    <div style="flex: 1; min-width: 0;">
+        <div style="font-weight: 700; font-size: 1rem; color: var(--text-main); line-height: 1.3;">Install GENEXUS UI</div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Get the app for a better experience</div>
+    </div>
+
+    <!-- Buttons -->
+    <div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
+        <button id="pwa-install-btn" style="background: linear-gradient(135deg, #a855f7, #3b82f6); color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 12px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: 0.3s; white-space: nowrap; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);">Install</button>
+        <button id="pwa-close-btn" style="background: var(--glass-bg); border: 1px solid var(--border-color); color: var(--text-muted); width: 38px; height: 38px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; transition: 0.3s; flex-shrink: 0;">✕</button>
+    </div>
 </div>
 
-<div id="update-notification" style="display: none; position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 9998; background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--border-color); border-radius: 16px; padding: 0.8rem 1.5rem; box-shadow: 0 20px 60px rgba(0,0,0,0.5); max-width: 90%; align-items: center; gap: 1rem;">
+<!-- PWA Update Notification -->
+<div id="pwa-update" style="display: none; position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); z-index: 9998; background: var(--card-bg); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border: 1px solid var(--border-color); border-radius: 16px; padding: 0.8rem 1.5rem; box-shadow: 0 20px 60px rgba(0,0,0,0.5); align-items: center; gap: 1rem; animation: slideUpBanner 0.4s cubic-bezier(0.25, 1, 0.5, 1);">
     <span style="color: var(--text-muted); font-size: 0.9rem;">🔄 New update available</span>
-    <button id="update-refresh-btn" style="background: var(--accent-primary); color: white; border: none; padding: 0.4rem 1.2rem; border-radius: 8px; font-weight: 600; cursor: pointer;">Refresh</button>
+    <button id="pwa-update-btn" style="background: var(--accent-primary); color: white; border: none; padding: 0.4rem 1.2rem; border-radius: 10px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: 0.3s;">Refresh</button>
 </div>
+
+<!-- Toast Container -->
+
     <div id="toast-container"></div>
     <script src="script.js"></script>
 </body>
