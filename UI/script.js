@@ -91,13 +91,54 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ---- Application state (runtime) ----
     const state = {
-        width: 1024,
-        height: 576,
+        ratioType: 'ultrawide', // Current ratio type
+        baseWidth: 3840,
+        baseHeight: 1080,
+        currentWidth: 3840,
+        currentHeight: 1080,
         count: 1,
         quality: 'medium',
         theme: 'dark',
-        images: []          // will hold { id, prompt, url, timestamp }
+        images: []
     };
+
+    // ---- Quality multipliers ----
+    const qualityMultipliers = {
+        low: 0.25,
+        medium: 0.5,
+        high: 1.0
+    };
+
+    // ---- Base dimensions for each ratio ----
+    const ratioBaseDimensions = {
+        'square': { w: 1024, h: 1024 },
+        'portrait': { w: 1024, h: 1536 },
+        'wide': { w: 2560, h: 1080 },
+        'landscape': { w: 2048, h: 1152 },
+        'long-portrait': { w: 1024, h: 2048 },
+        'ultrawide': { w: 3840, h: 1080 }
+    };
+
+    // ---- Calculate dimensions based on ratio and quality ----
+    function calculateDimensions(ratioType, quality) {
+        const base = ratioBaseDimensions[ratioType];
+        if (!base) return { w: 1024, h: 1024 };
+        
+        const multiplier = qualityMultipliers[quality] || 0.5;
+        
+        return {
+            w: Math.round(base.w * multiplier),
+            h: Math.round(base.h * multiplier)
+        };
+    }
+
+    // ---- Update dimensions in state ----
+    function updateDimensions() {
+        const dims = calculateDimensions(state.ratioType, state.quality);
+        state.currentWidth = dims.w;
+        state.currentHeight = dims.h;
+        console.log(`Dimensions updated: ${dims.w}x${dims.h} (${state.ratioType}, ${state.quality})`);
+    }
 
     // ---- IndexedDB helpers ----
     const DB_NAME = 'GenexusDB';
@@ -170,8 +211,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!db) return;
         const settings = {
             key: 'app-settings',
-            width: state.width,
-            height: state.height,
+            ratioType: state.ratioType,
+            baseWidth: state.baseWidth,
+            baseHeight: state.baseHeight,
             count: state.count,
             quality: state.quality,
             theme: state.theme
@@ -183,23 +225,30 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!db) return;
         const saved = await dbGet('settings', 'app-settings');
         if (saved) {
-            state.width = saved.width || 1024;
-            state.height = saved.height || 576;
+            state.ratioType = saved.ratioType || 'ultrawide';
+            state.baseWidth = saved.baseWidth || 3840;
+            state.baseHeight = saved.baseHeight || 1080;
             state.count = saved.count || 1;
             state.quality = saved.quality || 'medium';
             state.theme = saved.theme || 'dark';
+            
+            // Update dimensions based on loaded settings
+            updateDimensions();
+            
             // apply to UI
             applySettingsToUI();
             applyTheme(state.theme);
+        } else {
+            // First time - set default dimensions
+            updateDimensions();
         }
     }
 
     function applySettingsToUI() {
         // Ratio buttons
         els.ratioBtns.forEach(btn => {
-            const w = parseInt(btn.dataset.w);
-            const h = parseInt(btn.dataset.h);
-            if (w === state.width && h === state.height) {
+            const type = btn.dataset.type;
+            if (type === state.ratioType) {
                 btn.classList.add('active');
             } else {
                 btn.classList.remove('active');
@@ -233,7 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!db) return null;
         const entry = {
             prompt: prompt,
-            url: dataUrl,          // base64 encoded image
+            url: dataUrl,
             timestamp: Date.now()
         };
         const id = await dbPut('images', entry);
@@ -243,7 +292,6 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadAllImages() {
         if (!db) return [];
         const all = await dbGetAll('images');
-        // sort by timestamp descending (newest first)
         all.sort((a, b) => b.timestamp - a.timestamp);
         return all;
     }
@@ -267,7 +315,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const card = createResultCard(img.url, img.prompt, img.id);
             els.resultsGrid.appendChild(card);
         });
-        // re-create lucide icons for new cards
         lucide.createIcons();
     }
 
@@ -284,18 +331,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 <button class="action-icon-btn del-btn" title="Delete"><i data-lucide="trash-2"></i></button>
             </div>
         `;
-        // Download
         card.querySelector('.dl-btn').onclick = (e) => {
             e.stopPropagation();
             download(url);
         };
-        // Copy prompt
         card.querySelector('.cp-btn').onclick = (e) => {
             e.stopPropagation();
             navigator.clipboard.writeText(prompt);
             showToast('Prompt copied!');
         };
-        // Delete with confirmation
         const delBtn = card.querySelector('.del-btn');
         delBtn.onclick = (e) => {
             e.stopPropagation();
@@ -306,7 +350,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ---- Delete confirmation modal ----
     function showDeleteConfirmation(id, cardElement) {
-        // Create modal overlay
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
         overlay.innerHTML = `
@@ -329,7 +372,6 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         cancelBtn.onclick = closeModal;
-        // Click outside to close
         overlay.onclick = (e) => {
             if (e.target === overlay) closeModal();
         };
@@ -337,11 +379,9 @@ document.addEventListener('DOMContentLoaded', () => {
         confirmBtn.onclick = async () => {
             try {
                 await deleteImageFromDB(id);
-                // Remove card from DOM
                 if (cardElement && cardElement.parentNode) {
                     cardElement.remove();
                 }
-                // Check if gallery is empty
                 if (els.resultsGrid.children.length === 0) {
                     els.emptyState.classList.remove('hidden');
                 }
@@ -410,9 +450,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (validUrls.length === 0) throw new Error('API returned no images');
 
-            // Save each image to IndexedDB as base64
             for (let url of validUrls) {
-                // Convert blob URL or data URL to base64 if needed
                 let dataUrl = url;
                 if (url.startsWith('blob:')) {
                     const resp = await fetch(url);
@@ -423,7 +461,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         reader.readAsDataURL(blob);
                     });
                 } else if (!url.startsWith('data:image')) {
-                    // fallback: fetch as blob then to dataURL
                     const resp = await fetch(url);
                     const blob = await resp.blob();
                     dataUrl = await new Promise((resolve) => {
@@ -435,7 +472,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 await saveImageToDB(prompt, dataUrl);
             }
 
-            // Re-render gallery
             await renderGallery();
             showToast(`Generated ${validUrls.length} images!`);
             closeDrawer();
@@ -455,8 +491,8 @@ document.addEventListener('DOMContentLoaded', () => {
             prompt,
             model: 'flux',
             seed,
-            width: state.width,
-            height: state.height
+            width: state.currentWidth,
+            height: state.currentHeight
         });
 
         try {
@@ -504,9 +540,11 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.onclick = async () => {
             els.ratioBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            state.width = parseInt(btn.dataset.w);
-            state.height = parseInt(btn.dataset.h);
+            state.ratioType = btn.dataset.type;
+            // Update dimensions based on new ratio and current quality
+            updateDimensions();
             await saveSettings();
+            console.log(`Ratio changed to: ${state.ratioType}, dimensions: ${state.currentWidth}x${state.currentHeight}`);
         };
     });
 
@@ -515,7 +553,10 @@ document.addEventListener('DOMContentLoaded', () => {
             els.qualityBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             state.quality = btn.dataset.quality;
+            // Update dimensions based on current ratio and new quality
+            updateDimensions();
             await saveSettings();
+            console.log(`Quality changed to: ${state.quality}, dimensions: ${state.currentWidth}x${state.currentHeight}`);
         };
     });
 
@@ -690,7 +731,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!db) return;
         const images = await loadAllImages();
         if (images.length === 0) return;
-        // Confirm
         if (!confirm('Delete all images from history?')) return;
         for (let img of images) {
             await dbDelete('images', img.id);
@@ -699,15 +739,14 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast('History cleared.');
     };
 
-    // ---- Initialize App (renamed from init) ----
+    // ---- Initialize App ----
     async function initializeApp() {
         await openDB();
         await loadSettings();
         await renderGallery();
-        // update theme icon
         updateThemeIcon(state.theme);
-        // apply current theme
         document.documentElement.setAttribute('data-theme', state.theme);
+        console.log('App initialized with dimensions:', state.currentWidth, 'x', state.currentHeight);
     }
 
     // ---- Start the app with connection check ----
@@ -717,7 +756,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // PWA - Progressive Web App Functionality
     // =============================================
 
-    // ----- DOM Elements -----
     const pwaBanner = document.getElementById('pwa-banner');
     const pwaInstallBtn = document.getElementById('pwa-install-btn');
     const pwaCloseBtn = document.getElementById('pwa-close-btn');
@@ -726,7 +764,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let deferredPrompt = null;
 
-    // ----- Show / Hide Banner -----
     function showPWAInstallBanner() {
         if (pwaBanner) {
             pwaBanner.style.display = 'flex';
@@ -751,15 +788,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ----- Before Install Prompt -----
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        // Show banner after a small delay
         setTimeout(showPWAInstallBanner, 1500);
     });
 
-    // ----- Install Button Click -----
     if (pwaInstallBtn) {
         pwaInstallBtn.addEventListener('click', async () => {
             if (deferredPrompt) {
@@ -777,25 +811,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ----- Close Button -----
     if (pwaCloseBtn) {
         pwaCloseBtn.addEventListener('click', hidePWAInstallBanner);
     }
 
-    // ----- App Installed Event -----
     window.addEventListener('appinstalled', () => {
         console.log('[PWA] GENEXUS UI was installed');
         hidePWAInstallBanner();
         showToast('App installed successfully! 🎉');
     });
 
-    // ----- Check if running as PWA -----
     if (window.matchMedia('(display-mode: standalone)').matches) {
         console.log('[PWA] Running as installed PWA');
         hidePWAInstallBanner();
     }
 
-    // ----- Service Worker Registration -----
     if ('serviceWorker' in navigator) {
         const isLocalhost = window.location.hostname === 'localhost' || 
                             window.location.hostname === '127.0.0.1';
@@ -804,7 +834,6 @@ document.addEventListener('DOMContentLoaded', () => {
             .then((registration) => {
                 console.log('[PWA] Service Worker registered successfully');
 
-                // Check for updates
                 registration.addEventListener('updatefound', () => {
                     const newWorker = registration.installing;
                     newWorker.addEventListener('statechange', () => {
@@ -815,7 +844,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 });
 
-                // Check for updates every 60 seconds
                 setInterval(() => {
                     registration.update();
                 }, 60000);
@@ -829,7 +857,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-        // Handle controller change (update applied)
         let refreshing = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
             if (!refreshing) {
@@ -840,7 +867,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ----- Update Button Click -----
     if (pwaUpdateBtn) {
         pwaUpdateBtn.addEventListener('click', () => {
             if ('serviceWorker' in navigator) {
@@ -855,7 +881,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ----- Online / Offline Status -----
     window.addEventListener('online', () => {
         console.log('[PWA] Back online');
         showToast('Back online! 🌐');
