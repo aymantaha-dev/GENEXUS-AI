@@ -51,7 +51,6 @@
             100% { transform: translate(30px, 30px); }
         }
 
-        /* Gradient overlay */
         .mesh-gradient {
             position: fixed;
             inset: 0;
@@ -61,7 +60,6 @@
                 radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.15) 0, transparent 50%);
         }
 
-        /* Glow orbs */
         .glow-orb {
             position: fixed;
             border-radius: 50%;
@@ -84,7 +82,6 @@
             right: -150px; 
         }
 
-        /* Subtle grid glow */
         .bg-grid-glow {
             position: absolute;
             inset: 0;
@@ -141,11 +138,23 @@
             transform: scale(1.05);
             opacity: 0.9;
         }
+        
+        .retry-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .retry-status {
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            min-height: 1.5rem;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Background Grid -->
     <div class="bg-grid">
         <div class="bg-grid-pattern"></div>
         <div class="bg-grid-glow"></div>
@@ -159,8 +168,55 @@
         <div class="offline-icon">📡</div>
         <h1>You're <span class="text-gradient">Offline</span></h1>
         <p>Please check your internet connection and try again. Your generated images are safely stored locally.</p>
-        <button class="retry-btn" onclick="location.reload()">Retry Connection</button>
+        <button class="retry-btn" id="retry-btn">Retry Connection</button>
+        <div class="retry-status" id="retry-status"></div>
     </div>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const retryBtn = document.getElementById('retry-btn');
+            const retryStatus = document.getElementById('retry-status');
+            
+            retryBtn.addEventListener('click', async () => {
+                retryBtn.disabled = true;
+                retryStatus.textContent = 'Checking connection...';
+                retryStatus.style.color = '#8e8e93';
+                
+                // Try to connect
+                let connected = false;
+                
+                try {
+                    // Try to fetch a small resource
+                    const response = await fetch('https://www.google.com/favicon.ico', { 
+                        mode: 'no-cors',
+                        cache: 'no-store'
+                    });
+                    connected = true;
+                } catch (e) {
+                    // If fails, try HEAD request to same origin
+                    try {
+                        const res = await fetch('/', { method: 'HEAD', cache: 'no-store' });
+                        if (res.ok || res.type === 'opaque') {
+                            connected = true;
+                        }
+                    } catch (err) {
+                        connected = false;
+                    }
+                }
+                
+                if (connected) {
+                    retryStatus.textContent = '✅ Connected! Redirecting...';
+                    retryStatus.style.color = '#4ade80';
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 500);
+                } else {
+                    retryStatus.textContent = '❌ Still offline. Please check your connection.';
+                    retryStatus.style.color = '#f87171';
+                    retryBtn.disabled = false;
+                }
+            });
+        });
+    </script>
 </body>
 </html>

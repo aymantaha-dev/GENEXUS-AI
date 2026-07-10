@@ -14,7 +14,6 @@
     <!-- Background Grid -->
     <div class="bg-grid">
         <div class="bg-grid-pattern"></div>
-        <div class="bg-grid-dots"></div>
         <div class="bg-grid-glow"></div>
     </div>
 
@@ -23,183 +22,197 @@
     <div class="glow-orb orb-2"></div>
     <div class="drawer-overlay" id="drawer-overlay"></div>
 
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="logo">
-                <div class="logo-wrapper"><i data-lucide="zap" class="logo-icon"></i></div>
-                <span class="logo-text">GENEXUS <small>UI</small></span>
+    <!-- ===== Loading Screen ===== -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="logo-wrapper loading-logo">
+                <i data-lucide="zap" class="logo-icon"></i>
             </div>
-            <div class="nav-actions">
-                <button id="btn-gallery" class="nav-btn glass"><i data-lucide="layout-grid"></i></button>
-                <button id="btn-theme" class="nav-btn glass"><i data-lucide="sun"></i></button>
-                <button id="btn-settings-mobile" class="nav-btn glass mobile-only"><i data-lucide="sliders-horizontal"></i></button>
-            </div>
+            <div class="loading-spinner"></div>
+            <p class="loading-text">Connecting to GENEXUS...</p>
+            <p class="loading-subtext">Checking your connection</p>
         </div>
-    </nav>
+    </div>
 
-    <main class="app-container">
-        <aside class="sidebar-history desktop-only" id="history-sidebar">
-            <div class="sidebar-header">
-                <h3><i data-lucide="history"></i> Recent</h3>
-                <button id="clear-history" class="btn-text">Clear</button>
-            </div>
-            <div class="history-list" id="history-list"></div>
-        </aside>
+    <!-- ===== Main Content (hidden until connection check) ===== -->
+    <div id="main-content" style="display: none;">
 
-        <section class="main-content">
-            <header class="hero">
-                <div class="badge">Flux-Schnell Engine</div>
-                <h1 class="text-gradient">Imagine. Generate.</h1>
-                <p>Professional AI Artistry.</p>
-            </header>
-
-            <div class="prompt-card glass">
-                <div class="input-wrapper">
-                    <textarea id="prompt-input" placeholder="Describe your masterpiece..."></textarea>
-                    <div class="prompt-footer">
-                        <div class="prompt-tools">
-                            <button id="btn-random" class="tool-btn"><i data-lucide="shuffle"></i></button>
-                            <button id="btn-clear" class="tool-btn"><i data-lucide="eraser"></i></button>
-                        </div>
-                        <button id="btn-generate" class="btn-primary-premium">
-                            <span id="gen-text">Generate</span>
-                            <div class="loader hidden" id="gen-loader"></div>
-                        </button>
-                    </div>
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="logo">
+                    <div class="logo-wrapper"><i data-lucide="zap" class="logo-icon"></i></div>
+                    <span class="logo-text">GENEXUS <small>UI</small></span>
+                </div>
+                <div class="nav-actions">
+                    <button id="btn-gallery" class="nav-btn glass"><i data-lucide="layout-grid"></i></button>
+                    <button id="btn-theme" class="nav-btn glass"><i data-lucide="sun"></i></button>
+                    <button id="btn-settings-mobile" class="nav-btn glass mobile-only"><i data-lucide="sliders-horizontal"></i></button>
                 </div>
             </div>
+        </nav>
 
-            <div class="results-section" id="gallery-section">
-                <div class="section-header">
-                    <h2>Output Gallery</h2>
-                    <div class="divider"></div>
+        <main class="app-container">
+            <aside class="sidebar-history desktop-only" id="history-sidebar">
+                <div class="sidebar-header">
+                    <h3><i data-lucide="history"></i> Recent</h3>
+                    <button id="clear-history" class="btn-text">Clear</button>
                 </div>
-                <div id="results-grid" class="results-grid"></div>
-                <div id="empty-state" class="empty-state">
-                    <div class="empty-visual"><i data-lucide="sparkles"></i></div>
-                    <p>Ready for your first creation.</p>
-                </div>
-            </div>
-        </section>
+                <div class="history-list" id="history-list"></div>
+            </aside>
 
-        <aside class="sidebar-settings" id="settings-drawer">
-            <div class="drag-handle" id="drag-handle">
-                <span class="drag-bar"></span>
-            </div>
+            <section class="main-content">
+                <header class="hero">
+                    <div class="badge">Flux-Schnell Engine</div>
+                    <h1 class="text-gradient">Imagine. Generate.</h1>
+                    <p>Professional AI Artistry.</p>
+                </header>
 
-            <div class="settings-header">
-                <h3><i data-lucide="sliders-horizontal"></i> Settings</h3>
-                <button id="close-settings" class="btn-close desktop-only"><i data-lucide="x"></i></button>
-            </div>
-
-            <div class="settings-container">
-                <div class="setting-group">
-                    <label><i data-lucide="maximize"></i> Aspect Ratio</label>
-                    <div class="ratio-grid" id="ratio-selector">
-                        <button class="ratio-btn active" data-type="square" data-w="512" data-h="512">
-                            <i data-lucide="square"></i> 1:1
-                        </button>
-                        <button class="ratio-btn" data-type="portrait" data-w="512" data-h="768">
-                            <i data-lucide="smartphone"></i> 2:3
-                        </button>
-                        <button class="ratio-btn" data-type="landscape" data-w="1024" data-h="576">
-                            <i data-lucide="monitor"></i> 16:9
-                        </button>
-                    </div>
-                </div>
-
-                <div class="setting-group">
-                    <label><i data-lucide="award"></i> Quality</label>
-                    <div class="quality-selector">
-                        <button class="quality-btn" data-quality="low">Low</button>
-                        <button class="quality-btn active" data-quality="medium">Med</button>
-                        <button class="quality-btn" data-quality="high">High</button>
-                    </div>
-                </div>
-
-                <div class="setting-group">
-                    <label><i data-lucide="palette"></i> Style</label>
-                    <select id="select-style" class="premium-select">
-                        <option value="">None</option>
-                        <option value="cinematic, 8k, highly detailed">Cinematic</option>
-                        <option value="anime style, vibrant">Anime</option>
-                        <option value="cyberpunk, neon, futuristic">Cyberpunk</option>
-                        <option value="3d render, unreal engine 5">3D Render</option>
-                    </select>
-                </div>
-
-                <div class="settings-row">
-                    <div class="setting-group">
-                        <label>Count</label>
-                        <div class="count-selector">
-                            <button class="count-btn active" data-count="1">1</button>
-                            <button class="count-btn" data-count="2">2</button>
-                            <button class="count-btn" data-count="4">4</button>
+                <div class="prompt-card glass">
+                    <div class="input-wrapper">
+                        <textarea id="prompt-input" placeholder="Describe your masterpiece..."></textarea>
+                        <div class="prompt-footer">
+                            <div class="prompt-tools">
+                                <button id="btn-random" class="tool-btn"><i data-lucide="shuffle"></i></button>
+                                <button id="btn-clear" class="tool-btn"><i data-lucide="eraser"></i></button>
+                            </div>
+                            <button id="btn-generate" class="btn-primary-premium">
+                                <span id="gen-text">Generate</span>
+                                <div class="loader hidden" id="gen-loader"></div>
+                            </button>
                         </div>
                     </div>
+                </div>
+
+                <div class="results-section" id="gallery-section">
+                    <div class="section-header">
+                        <h2>Output Gallery</h2>
+                        <div class="divider"></div>
+                    </div>
+                    <div id="results-grid" class="results-grid"></div>
+                    <div id="empty-state" class="empty-state">
+                        <div class="empty-visual"><i data-lucide="sparkles"></i></div>
+                        <p>Ready for your first creation.</p>
+                    </div>
+                </div>
+            </section>
+
+            <aside class="sidebar-settings" id="settings-drawer">
+                <div class="drag-handle" id="drag-handle">
+                    <span class="drag-bar"></span>
+                </div>
+
+                <div class="settings-header">
+                    <h3><i data-lucide="sliders-horizontal"></i> Settings</h3>
+                    <button id="close-settings" class="btn-close desktop-only"><i data-lucide="x"></i></button>
+                </div>
+
+                <div class="settings-container">
                     <div class="setting-group">
-                        <label>Seed</label>
-                        <input type="number" id="input-seed" class="premium-input" placeholder="Auto">
+                        <label><i data-lucide="maximize"></i> Aspect Ratio</label>
+                        <div class="ratio-grid" id="ratio-selector">
+                            <button class="ratio-btn active" data-type="square" data-w="512" data-h="512">
+                                <i data-lucide="square"></i> 1:1
+                            </button>
+                            <button class="ratio-btn" data-type="portrait" data-w="512" data-h="768">
+                                <i data-lucide="smartphone"></i> 2:3
+                            </button>
+                            <button class="ratio-btn" data-type="landscape" data-w="1024" data-h="576">
+                                <i data-lucide="monitor"></i> 16:9
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="setting-group">
+                        <label><i data-lucide="award"></i> Quality</label>
+                        <div class="quality-selector">
+                            <button class="quality-btn" data-quality="low">Low</button>
+                            <button class="quality-btn active" data-quality="medium">Med</button>
+                            <button class="quality-btn" data-quality="high">High</button>
+                        </div>
+                    </div>
+
+                    <div class="setting-group">
+                        <label><i data-lucide="palette"></i> Style</label>
+                        <select id="select-style" class="premium-select">
+                            <option value="">None</option>
+                            <option value="cinematic, 8k, highly detailed">Cinematic</option>
+                            <option value="anime style, vibrant">Anime</option>
+                            <option value="cyberpunk, neon, futuristic">Cyberpunk</option>
+                            <option value="3d render, unreal engine 5">3D Render</option>
+                        </select>
+                    </div>
+
+                    <div class="settings-row">
+                        <div class="setting-group">
+                            <label>Count</label>
+                            <div class="count-selector">
+                                <button class="count-btn active" data-count="1">1</button>
+                                <button class="count-btn" data-count="2">2</button>
+                                <button class="count-btn" data-count="4">4</button>
+                            </div>
+                        </div>
+                        <div class="setting-group">
+                            <label>Seed</label>
+                            <input type="number" id="input-seed" class="premium-input" placeholder="Auto">
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </main>
+
+        <footer class="site-footer">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="logo-wrapper footer-logo"><i data-lucide="zap" class="logo-icon"></i></div>
+                    <span class="footer-title">GENEXUS <small>UI</small></span>
+                </div>
+                <nav class="footer-links">
+                    <a href="about.html">About</a>
+                    <a href="why.html">Why</a>
+                    <a href="copyright.html">Copyright</a>
+                </nav>
+                <div class="footer-bottom">
+                    <p>GENEXUS UI is a demo project. Not a real product.</p>
+                    <a href="https://github.com/aymantaha-dev/GENEXUS-AI" target="_blank" rel="noopener" class="github-link">
+                        <i data-lucide="github"></i> View on GitHub
+                    </a>
+                    <div class="footer-credit">
+                        <span>Developed from scratch by <strong>KivodeAI</strong> — coming soon.</span>
                     </div>
                 </div>
             </div>
-        </aside>
-    </main>
-
-    <footer class="site-footer">
-        <div class="footer-content">
-            <div class="footer-brand">
-                <div class="logo-wrapper footer-logo"><i data-lucide="zap" class="logo-icon"></i></div>
-                <span class="footer-title">GENEXUS <small>UI</small></span>
-            </div>
-            <nav class="footer-links">
-                <a href="about.html">About</a>
-                <a href="why.html">Why</a>
-                <a href="copyright.html">Copyright</a>
-            </nav>
-            <div class="footer-bottom">
-                <p>GENEXUS UI is a demo project. Not a real product.</p>
-                <a href="https://github.com/aymantaha-dev/GENEXUS-AI" target="_blank" rel="noopener" class="github-link">
-                    <i data-lucide="github"></i> View on GitHub
-                </a>
-                <div class="footer-credit">
-                    <span>Developed from scratch by <strong>KivodeAI</strong> — coming soon.</span>
-                </div>
-            </div>
-        </div>
-    </footer>
-    
-    <!-- PWA Install Banner -->
-    <div id="pwa-banner" style="display: none; position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 9999; width: 90%; max-width: 480px; background: var(--card-bg); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border: 1px solid var(--border-color); border-radius: 20px; padding: 1rem 1.5rem; box-shadow: 0 20px 80px rgba(0,0,0,0.6); align-items: center; gap: 1rem; animation: slideUpBanner 0.5s cubic-bezier(0.25, 1, 0.5, 1);">
+        </footer>
         
-        <!-- App Icon -->
-        <div style="flex-shrink: 0; width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg, #a855f7, #3b82f6); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(168, 85, 247, 0.3);">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-            </svg>
+        <!-- PWA Install Banner -->
+        <div id="pwa-banner" style="display: none; position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 9999; width: 90%; max-width: 480px; background: var(--card-bg); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border: 1px solid var(--border-color); border-radius: 20px; padding: 1rem 1.5rem; box-shadow: 0 20px 80px rgba(0,0,0,0.6); align-items: center; gap: 1rem; animation: slideUpBanner 0.5s cubic-bezier(0.25, 1, 0.5, 1);">
+            
+            <div style="flex-shrink: 0; width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg, #a855f7, #3b82f6); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(168, 85, 247, 0.3);">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                </svg>
+            </div>
+
+            <div style="flex: 1; min-width: 0;">
+                <div style="font-weight: 700; font-size: 1rem; color: var(--text-main); line-height: 1.3;">Install GENEXUS UI</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Get the app for a better experience</div>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
+                <button id="pwa-install-btn" style="background: linear-gradient(135deg, #a855f7, #3b82f6); color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 12px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: 0.3s; white-space: nowrap; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);">Install</button>
+                <button id="pwa-close-btn" style="background: var(--glass-bg); border: 1px solid var(--border-color); color: var(--text-muted); width: 38px; height: 38px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; transition: 0.3s; flex-shrink: 0;">✕</button>
+            </div>
         </div>
 
-        <!-- Text Content -->
-        <div style="flex: 1; min-width: 0;">
-            <div style="font-weight: 700; font-size: 1rem; color: var(--text-main); line-height: 1.3;">Install GENEXUS UI</div>
-            <div style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Get the app for a better experience</div>
+        <!-- PWA Update Notification -->
+        <div id="pwa-update" style="display: none; position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); z-index: 9998; background: var(--card-bg); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border: 1px solid var(--border-color); border-radius: 16px; padding: 0.8rem 1.5rem; box-shadow: 0 20px 60px rgba(0,0,0,0.5); align-items: center; gap: 1rem; animation: slideUpBanner 0.4s cubic-bezier(0.25, 1, 0.5, 1);">
+            <span style="color: var(--text-muted); font-size: 0.9rem;">🔄 New update available</span>
+            <button id="pwa-update-btn" style="background: var(--accent-primary); color: white; border: none; padding: 0.4rem 1.2rem; border-radius: 10px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: 0.3s;">Refresh</button>
         </div>
 
-        <!-- Buttons -->
-        <div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
-            <button id="pwa-install-btn" style="background: linear-gradient(135deg, #a855f7, #3b82f6); color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 12px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: 0.3s; white-space: nowrap; box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);">Install</button>
-            <button id="pwa-close-btn" style="background: var(--glass-bg); border: 1px solid var(--border-color); color: var(--text-muted); width: 38px; height: 38px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; transition: 0.3s; flex-shrink: 0;">✕</button>
-        </div>
+        <!-- Toast Container -->
+        <div id="toast-container"></div>
     </div>
 
-    <!-- PWA Update Notification -->
-    <div id="pwa-update" style="display: none; position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); z-index: 9998; background: var(--card-bg); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border: 1px solid var(--border-color); border-radius: 16px; padding: 0.8rem 1.5rem; box-shadow: 0 20px 60px rgba(0,0,0,0.5); align-items: center; gap: 1rem; animation: slideUpBanner 0.4s cubic-bezier(0.25, 1, 0.5, 1);">
-        <span style="color: var(--text-muted); font-size: 0.9rem;">🔄 New update available</span>
-        <button id="pwa-update-btn" style="background: var(--accent-primary); color: white; border: none; padding: 0.4rem 1.2rem; border-radius: 10px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: 0.3s;">Refresh</button>
-    </div>
-
-    <!-- Toast Container -->
-    <div id="toast-container"></div>
     <script src="script.js"></script>
 </body>
 </html>

@@ -6,6 +6,62 @@
 document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
 
+    // ===== Connection Check & Loading Screen =====
+    const loadingScreen = document.getElementById('loading-screen');
+    const mainContent = document.getElementById('main-content');
+    
+    function checkConnection() {
+        return new Promise((resolve) => {
+            // Check if navigator is online
+            if (!navigator.onLine) {
+                resolve(false);
+                return;
+            }
+            
+            // Try to fetch a small resource to verify actual connectivity
+            fetch('https://www.google.com/favicon.ico', { 
+                mode: 'no-cors',
+                cache: 'no-store'
+            })
+            .then(() => resolve(true))
+            .catch(() => {
+                // If fetch fails, try a simple HEAD request to the same origin
+                fetch('/', { method: 'HEAD', cache: 'no-store' })
+                    .then(() => resolve(true))
+                    .catch(() => resolve(false));
+            });
+            
+            // Fallback: if fetch takes too long
+            setTimeout(() => resolve(false), 3000);
+        });
+    }
+    
+    async function initApp() {
+        // Show loading screen
+        if (loadingScreen) {
+            loadingScreen.classList.remove('hidden');
+        }
+        
+        // Check connection
+        const isOnline = await checkConnection();
+        
+        if (isOnline) {
+            // Hide loading screen with animation
+            if (loadingScreen) {
+                loadingScreen.classList.add('hidden');
+            }
+            if (mainContent) {
+                mainContent.style.display = 'block';
+            }
+            
+            // Initialize the app
+            await initializeApp();
+        } else {
+            // Redirect to offline page
+            window.location.href = 'offscreen.html';
+        }
+    }
+
     // ---- DOM refs ----
     const els = {
         promptInput: document.getElementById('prompt-input'),
@@ -301,6 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ---- Toast ----
     function showToast(msg, type = 'success') {
         const container = document.getElementById('toast-container');
+        if (!container) return;
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
         toast.innerText = msg;
@@ -621,8 +678,8 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast('History cleared.');
     };
 
-    // ---- Init ----
-    async function init() {
+    // ---- Initialize App (renamed from init) ----
+    async function initializeApp() {
         await openDB();
         await loadSettings();
         await renderGallery();
@@ -632,170 +689,159 @@ document.addEventListener('DOMContentLoaded', () => {
         document.documentElement.setAttribute('data-theme', state.theme);
     }
 
-    init().catch(console.error);
+    // ---- Start the app with connection check ----
+    initApp();
     
-// =============================================
-// PWA - Progressive Web App Functionality
-// =============================================
+    // =============================================
+    // PWA - Progressive Web App Functionality
+    // =============================================
 
-// ----- DOM Elements -----
-const pwaBanner = document.getElementById('pwa-banner');
-const pwaInstallBtn = document.getElementById('pwa-install-btn');
-const pwaCloseBtn = document.getElementById('pwa-close-btn');
-const pwaUpdate = document.getElementById('pwa-update');
-const pwaUpdateBtn = document.getElementById('pwa-update-btn');
+    // ----- DOM Elements -----
+    const pwaBanner = document.getElementById('pwa-banner');
+    const pwaInstallBtn = document.getElementById('pwa-install-btn');
+    const pwaCloseBtn = document.getElementById('pwa-close-btn');
+    const pwaUpdate = document.getElementById('pwa-update');
+    const pwaUpdateBtn = document.getElementById('pwa-update-btn');
 
-let deferredPrompt = null;
+    let deferredPrompt = null;
 
-// ----- Show / Hide Banner -----
-function showPWAInstallBanner() {
-    if (pwaBanner) {
-        pwaBanner.style.display = 'flex';
-    }
-}
-
-function hidePWAInstallBanner() {
-    if (pwaBanner) {
-        pwaBanner.style.display = 'none';
-    }
-}
-
-function showPWAUpdateNotification() {
-    if (pwaUpdate) {
-        pwaUpdate.style.display = 'flex';
-    }
-}
-
-function hidePWAUpdateNotification() {
-    if (pwaUpdate) {
-        pwaUpdate.style.display = 'none';
-    }
-}
-
-// ----- Before Install Prompt -----
-window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    // Show banner after a small delay
-    setTimeout(showPWAInstallBanner, 1500);
-});
-
-// ----- Install Button Click -----
-if (pwaInstallBtn) {
-    pwaInstallBtn.addEventListener('click', async () => {
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            const result = await deferredPrompt.userChoice;
-            if (result.outcome === 'accepted') {
-                console.log('[PWA] User accepted the install prompt');
-                hidePWAInstallBanner();
-                showToast('App installed successfully! 🎉');
-            } else {
-                console.log('[PWA] User dismissed the install prompt');
-            }
-            deferredPrompt = null;
+    // ----- Show / Hide Banner -----
+    function showPWAInstallBanner() {
+        if (pwaBanner) {
+            pwaBanner.style.display = 'flex';
         }
+    }
+
+    function hidePWAInstallBanner() {
+        if (pwaBanner) {
+            pwaBanner.style.display = 'none';
+        }
+    }
+
+    function showPWAUpdateNotification() {
+        if (pwaUpdate) {
+            pwaUpdate.style.display = 'flex';
+        }
+    }
+
+    function hidePWAUpdateNotification() {
+        if (pwaUpdate) {
+            pwaUpdate.style.display = 'none';
+        }
+    }
+
+    // ----- Before Install Prompt -----
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        // Show banner after a small delay
+        setTimeout(showPWAInstallBanner, 1500);
     });
-}
 
-// ----- Close Button -----
-if (pwaCloseBtn) {
-    pwaCloseBtn.addEventListener('click', hidePWAInstallBanner);
-}
-
-// ----- App Installed Event -----
-window.addEventListener('appinstalled', () => {
-    console.log('[PWA] GENEXUS UI was installed');
-    hidePWAInstallBanner();
-    showToast('App installed successfully! 🎉');
-});
-
-// ----- Check if running as PWA -----
-if (window.matchMedia('(display-mode: standalone)').matches) {
-    console.log('[PWA] Running as installed PWA');
-    hidePWAInstallBanner();
-}
-
-// ----- Service Worker Registration -----
-if ('serviceWorker' in navigator) {
-    const isLocalhost = window.location.hostname === 'localhost' || 
-                        window.location.hostname === '127.0.0.1';
-
-    navigator.serviceWorker.register('./service-worker.js')
-        .then((registration) => {
-            console.log('[PWA] Service Worker registered successfully');
-
-            // Check for updates
-            registration.addEventListener('updatefound', () => {
-                const newWorker = registration.installing;
-                newWorker.addEventListener('statechange', () => {
-                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                        console.log('[PWA] New update available');
-                        showPWAUpdateNotification();
-                    }
-                });
-            });
-
-            // Check for updates every 60 seconds
-            setInterval(() => {
-                registration.update();
-            }, 60000);
-
-        })
-        .catch((error) => {
-            if (!isLocalhost) {
-                console.log('[PWA] Service Worker registration failed:', error);
-            } else {
-                console.log('[PWA] Service Worker not registered (localhost mode)');
+    // ----- Install Button Click -----
+    if (pwaInstallBtn) {
+        pwaInstallBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const result = await deferredPrompt.userChoice;
+                if (result.outcome === 'accepted') {
+                    console.log('[PWA] User accepted the install prompt');
+                    hidePWAInstallBanner();
+                    showToast('App installed successfully! 🎉');
+                } else {
+                    console.log('[PWA] User dismissed the install prompt');
+                }
+                deferredPrompt = null;
             }
         });
+    }
 
-    // Handle controller change (update applied)
-    let refreshing = false;
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (!refreshing) {
-            refreshing = true;
-            console.log('[PWA] Update applied, reloading...');
-            window.location.reload();
-        }
+    // ----- Close Button -----
+    if (pwaCloseBtn) {
+        pwaCloseBtn.addEventListener('click', hidePWAInstallBanner);
+    }
+
+    // ----- App Installed Event -----
+    window.addEventListener('appinstalled', () => {
+        console.log('[PWA] GENEXUS UI was installed');
+        hidePWAInstallBanner();
+        showToast('App installed successfully! 🎉');
     });
-}
 
-// ----- Update Button Click -----
-if (pwaUpdateBtn) {
-    pwaUpdateBtn.addEventListener('click', () => {
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistration().then((registration) => {
-                if (registration && registration.waiting) {
-                    registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    // ----- Check if running as PWA -----
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+        console.log('[PWA] Running as installed PWA');
+        hidePWAInstallBanner();
+    }
+
+    // ----- Service Worker Registration -----
+    if ('serviceWorker' in navigator) {
+        const isLocalhost = window.location.hostname === 'localhost' || 
+                            window.location.hostname === '127.0.0.1';
+
+        navigator.serviceWorker.register('./service-worker.js')
+            .then((registration) => {
+                console.log('[PWA] Service Worker registered successfully');
+
+                // Check for updates
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            console.log('[PWA] New update available');
+                            showPWAUpdateNotification();
+                        }
+                    });
+                });
+
+                // Check for updates every 60 seconds
+                setInterval(() => {
+                    registration.update();
+                }, 60000);
+
+            })
+            .catch((error) => {
+                if (!isLocalhost) {
+                    console.log('[PWA] Service Worker registration failed:', error);
+                } else {
+                    console.log('[PWA] Service Worker not registered (localhost mode)');
                 }
             });
-        }
-        hidePWAUpdateNotification();
-        window.location.reload();
+
+        // Handle controller change (update applied)
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (!refreshing) {
+                refreshing = true;
+                console.log('[PWA] Update applied, reloading...');
+                window.location.reload();
+            }
+        });
+    }
+
+    // ----- Update Button Click -----
+    if (pwaUpdateBtn) {
+        pwaUpdateBtn.addEventListener('click', () => {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistration().then((registration) => {
+                    if (registration && registration.waiting) {
+                        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                    }
+                });
+            }
+            hidePWAUpdateNotification();
+            window.location.reload();
+        });
+    }
+
+    // ----- Online / Offline Status -----
+    window.addEventListener('online', () => {
+        console.log('[PWA] Back online');
+        showToast('Back online! 🌐');
     });
-}
 
-// ----- Online / Offline Status -----
-window.addEventListener('online', () => {
-    console.log('[PWA] Back online');
-    showToast('Back online! 🌐');
+    window.addEventListener('offline', () => {
+        console.log('[PWA] Offline');
+        showToast('You are offline. Using cached content.', 'error');
+    });
 });
-
-window.addEventListener('offline', () => {
-    console.log('[PWA] Offline');
-    showToast('You are offline. Using cached content.', 'error');
-});
-
-// ----- Toast function (if not already defined) -----
-function showToast(msg, type = 'success') {
-    const container = document.getElementById('toast-container');
-    if (!container) return;
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.innerText = msg;
-    container.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-}
-});
-
