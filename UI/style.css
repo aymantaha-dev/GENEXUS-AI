@@ -1,4 +1,4 @@
-/* ===== style.css (full, with all requested changes) ===== */
+/* ===== style.css ===== */
 
 :root {
     --bg-color: #030303;
@@ -224,7 +224,7 @@ body {
     -webkit-text-fill-color: transparent;
 }
 
-/* ===== Prompt Card - Full Width with Grid Background ===== */
+/* ===== Prompt Card - Full Width ===== */
 .prompt-card {
     max-width: 100%;
     margin: 0 auto 5rem auto;
@@ -234,24 +234,7 @@ body {
     padding: 1.5rem;
     backdrop-filter: blur(25px);
     box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), 0 0 20px rgba(168, 85, 247, 0.1);
-    position: relative;
-    overflow: hidden;
 }
-
-
-
-[data-theme="light"] .prompt-card::before {
-    background-image: 
-        linear-gradient(rgba(59, 130, 246, 0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(59, 130, 246, 0.04) 1px, transparent 1px);
-}
-
-/* Ensure content is above the grid */
-.input-wrapper {
-    position: relative;
-    z-index: 1;
-}
-
 .input-wrapper textarea {
     width: 100%;
     height: 120px;
@@ -262,10 +245,7 @@ body {
     resize: none;
     outline: none;
 }
-
 .prompt-footer {
-    position: relative;
-    z-index: 1;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -312,7 +292,50 @@ body {
     align-items: center;
     gap: 6px;
 }
-.premium-select,
+
+/* ===== Enhanced Select Dropdown ===== */
+.premium-select {
+    width: 100%;
+    background: var(--glass-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    padding: 0.7rem 1rem;
+    border-radius: 10px;
+    outline: none;
+    font-size: 0.9rem;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238e8e93' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 2.5rem;
+}
+
+.premium-select:hover {
+    border-color: var(--accent-primary);
+}
+
+.premium-select:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+}
+
+.premium-select option {
+    background: var(--bg-color);
+    color: var(--text-main);
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    border: none;
+}
+
+.premium-select option:hover,
+.premium-select option:checked {
+    background: var(--accent-primary);
+    color: white;
+}
+
 .premium-input {
     width: 100%;
     background: var(--glass-bg);
@@ -323,8 +346,71 @@ body {
     outline: none;
     font-size: 0.9rem;
 }
-.premium-select option { background: var(--bg-color); }
-.ratio-grid,
+
+/* ===== Enhanced Ratio Grid ===== */
+.ratio-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    background: var(--glass-bg);
+    padding: 8px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+}
+
+.ratio-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    padding: 0.75rem 0.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    text-align: center;
+    line-height: 1.2;
+    min-height: 60px;
+    justify-content: center;
+}
+
+.ratio-btn i,
+.ratio-btn svg {
+    width: 24px;
+    height: 24px;
+    stroke: currentColor;
+    fill: none;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.ratio-btn:hover {
+    color: var(--text-main);
+    background: rgba(168, 85, 247, 0.05);
+}
+
+.ratio-btn.active {
+    background: var(--accent-primary);
+    color: white;
+    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+}
+
+.ratio-btn.active:hover {
+    background: var(--accent-primary);
+}
+
+/* Style for inline SVG icons */
+.ratio-btn svg {
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+}
+
 .quality-selector,
 .count-selector {
     display: grid;
@@ -334,10 +420,8 @@ body {
     border-radius: 10px;
     border: 1px solid var(--border-color);
 }
-.ratio-grid { grid-template-columns: repeat(3, 1fr); }
 .quality-selector { grid-template-columns: repeat(3, 1fr); }
 .count-selector { grid-template-columns: repeat(3, 1fr); }
-.ratio-btn,
 .quality-btn,
 .count-btn {
     background: transparent;
@@ -353,7 +437,6 @@ body {
     align-items: center;
     gap: 4px;
 }
-.ratio-btn.active,
 .quality-btn.active,
 .count-btn.active {
     background: var(--accent-primary);
@@ -561,6 +644,77 @@ body {
 }
 .drawer-overlay.active { display: block; }
 
+/* ===== Loading Screen ===== */
+.loading-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: var(--bg-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+
+.loading-screen.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    text-align: center;
+}
+
+.loading-logo {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 32px rgba(168, 85, 247, 0.3);
+    animation: pulseLogo 1.5s ease-in-out infinite;
+}
+
+.loading-logo .logo-icon {
+    width: 32px;
+    height: 32px;
+    color: white;
+}
+
+.loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid var(--border-color);
+    border-top: 3px solid var(--accent-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.loading-text {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.loading-subtext {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: -0.5rem 0 0 0;
+}
+
+@keyframes pulseLogo {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
 /* ============================================================ */
 /* Mobile Bottom Sheet – fixed to bottom, with drag handle       */
 /* ============================================================ */
@@ -636,7 +790,23 @@ body {
         scroll-behavior: smooth;
     }
 
-    .ratio-grid { grid-template-columns: repeat(3, 1fr); }
+    .ratio-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+        padding: 6px;
+    }
+    
+    .ratio-btn {
+        padding: 0.6rem 0.3rem;
+        font-size: 0.7rem;
+        min-height: 50px;
+    }
+    
+    .ratio-btn i,
+    .ratio-btn svg {
+        width: 20px;
+        height: 20px;
+    }
 }
 
 @keyframes slideUpSheet {
@@ -695,6 +865,17 @@ body {
     .prompt-card { padding: 1rem; margin: 0 0 3rem 0; }
     .footer-links { gap: 1rem; }
     .settings-container { padding: 1rem; }
+    .ratio-btn {
+        font-size: 0.6rem;
+        padding: 0.5rem 0.2rem;
+        min-height: 45px;
+        gap: 4px;
+    }
+    .ratio-btn i,
+    .ratio-btn svg {
+        width: 18px;
+        height: 18px;
+    }
 }
 
 /* ---- Delete confirmation modal ---- */
@@ -785,108 +966,21 @@ body {
     transform: scale(1.1);
 }
 
-/* ---- Credit badge (KivodeAI) - already added in footer, but ensure style exists ---- */
-.footer-credit {
-    margin-top: 0.5rem;
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    letter-spacing: 0.3px;
-    border-top: 1px solid var(--border-color);
-    padding-top: 0.8rem;
-    width: 100%;
-    max-width: 400px;
-}
-.footer-credit strong {
-    color: var(--accent-primary);
-    font-weight: 600;
-    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+/* ---- Custom scrollbar for select dropdown ---- */
+.premium-select::-webkit-scrollbar {
+    width: 6px;
 }
 
-/* ===== Loading Screen ===== */
-.loading-screen {
-    position: fixed;
-    inset: 0;
-    z-index: 99999;
-    background: var(--bg-color);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: opacity 0.6s ease, visibility 0.6s ease;
+.premium-select::-webkit-scrollbar-track {
+    background: var(--glass-bg);
+    border-radius: 10px;
 }
 
-.loading-screen.hidden {
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
+.premium-select::-webkit-scrollbar-thumb {
+    background: var(--accent-primary);
+    border-radius: 10px;
 }
 
-.loading-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1.5rem;
-    text-align: center;
-}
-
-.loading-logo {
-    width: 64px;
-    height: 64px;
-    border-radius: 16px;
-    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 8px 32px rgba(168, 85, 247, 0.3);
-    animation: pulseLogo 1.5s ease-in-out infinite;
-}
-
-.loading-logo .logo-icon {
-    width: 32px;
-    height: 32px;
-    color: white;
-}
-
-.loading-spinner {
-    width: 48px;
-    height: 48px;
-    border: 3px solid var(--border-color);
-    border-top: 3px solid var(--accent-primary);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-}
-
-.loading-text {
-    font-size: 1.2rem;
-    font-weight: 600;
-    color: var(--text-main);
-    margin: 0;
-}
-
-.loading-subtext {
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    margin: -0.5rem 0 0 0;
-}
-
-@keyframes pulseLogo {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-}
-
-/* Offline redirect overlay */
-.offline-redirect {
-    position: fixed;
-    inset: 0;
-    z-index: 99998;
-    background: var(--bg-color);
-    display: none;
-    align-items: center;
-    justify-content: center;
-}
-
-.offline-redirect.active {
-    display: flex;
+.premium-select::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-secondary);
 }

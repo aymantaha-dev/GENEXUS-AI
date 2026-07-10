@@ -91,8 +91,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ---- Application state (runtime) ----
     const state = {
-        width: 512,
-        height: 512,
+        width: 1024,
+        height: 576,
         count: 1,
         quality: 'medium',
         theme: 'dark',
@@ -183,8 +183,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!db) return;
         const saved = await dbGet('settings', 'app-settings');
         if (saved) {
-            state.width = saved.width || 512;
-            state.height = saved.height || 512;
+            state.width = saved.width || 1024;
+            state.height = saved.height || 576;
             state.count = saved.count || 1;
             state.quality = saved.quality || 'medium';
             state.theme = saved.theme || 'dark';
@@ -601,61 +601,82 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ---- Random prompt ----
     const premiumPrompts = [
-    // CINEMATIC & REALISM
-    "Cyberpunk street photography, neon signage, rain-slicked pavement, cinematic lighting, 8k, hyper-realistic",
-    "Portrait of a rugged Viking warrior, battle-worn face, intense eyes, snow falling, cinematic lighting, ultra-detailed",
-    "A futuristic metropolis at sunset, flying vehicles, massive skyscrapers, volumetric fog, cinematic wide shot, 8k",
-    "Deep sea exploration, bioluminescent creatures, glowing jellyfish, dark abyss, hyper-realistic, macro photography",
-    "Abandoned gothic cathedral, sunbeams breaking through dust, cinematic atmosphere, epic scale, highly detailed",
-    "Classic Hollywood noir, 1940s detective, shadows and light, smoke, high contrast, cinematic film grain",
-    "Hyper-realistic close-up of a human eye, reflecting a galaxy, extreme macro, intricate iris details, 8k",
-    "A majestic lion in the savanna, golden hour, dust particles in sunlight, National Geographic style, 8k",
-    "Vintage luxury car driving through the Amalfi Coast, sun flare, cinematic motion blur, high fidelity",
-    "A futuristic soldier in sleek carbon fiber armor, standing in a desert, cinematic lighting, unreal engine 5",
+        // CINEMATIC & REALISM
+        "Cyberpunk street photography, neon signage, rain-slicked pavement, cinematic lighting, 8k, hyper-realistic",
+        "Portrait of a rugged Viking warrior, battle-worn face, intense eyes, snow falling, cinematic lighting, ultra-detailed",
+        "A futuristic metropolis at sunset, flying vehicles, massive skyscrapers, volumetric fog, cinematic wide shot, 8k",
+        "Deep sea exploration, bioluminescent creatures, glowing jellyfish, dark abyss, hyper-realistic, macro photography",
+        "Abandoned gothic cathedral, sunbeams breaking through dust, cinematic atmosphere, epic scale, highly detailed",
+        "Classic Hollywood noir, 1940s detective, shadows and light, smoke, high contrast, cinematic film grain",
+        "Hyper-realistic close-up of a human eye, reflecting a galaxy, extreme macro, intricate iris details, 8k",
+        "A majestic lion in the savanna, golden hour, dust particles in sunlight, National Geographic style, 8k",
+        "Vintage luxury car driving through the Amalfi Coast, sun flare, cinematic motion blur, high fidelity",
+        "A futuristic soldier in sleek carbon fiber armor, standing in a desert, cinematic lighting, unreal engine 5",
 
-    // FANTASY & MYTHOLOGY
-    "Majestic floating islands with cascading waterfalls, ethereal atmosphere, fantasy landscape, volumetric lighting",
-    "Ancient mystical forest, glowing bioluminescent flora, mythical creatures, fantasy art, epic composition",
-    "A majestic dragon made of crystalline ice, breathing frost, mountain peak, hyper-realistic, 8k",
-    "Ethereal goddess of the moon, flowing silver hair, starlight, celestial atmosphere, digital art masterpiece",
-    "An enchanted library with flying books, magical glowing particles, dark academia aesthetic, highly detailed",
-    "A phoenix rising from golden ashes, intense fire effects, cinematic composition, mythical creature, 8k",
-    "Underground elven city, glowing crystals, intricate architecture, fantasy concept art, masterpiece",
-    "A knight in glowing holy armor, standing before a massive dragon, epic fantasy battle, cinematic scale",
-    "Floating steampunk city in the clouds, brass machinery, airships, Victorian fantasy, highly detailed",
-    "A dark sorcerer summoning a storm, lightning bolts, swirling magic energy, epic fantasy, 8k",
+        // FANTASY & MYTHOLOGY
+        "Majestic floating islands with cascading waterfalls, ethereal atmosphere, fantasy landscape, volumetric lighting",
+        "Ancient mystical forest, glowing bioluminescent flora, mythical creatures, fantasy art, epic composition",
+        "A majestic dragon made of crystalline ice, breathing frost, mountain peak, hyper-realistic, 8k",
+        "Ethereal goddess of the moon, flowing silver hair, starlight, celestial atmosphere, digital art masterpiece",
+        "An enchanted library with flying books, magical glowing particles, dark academia aesthetic, highly detailed",
+        "A phoenix rising from golden ashes, intense fire effects, cinematic composition, mythical creature, 8k",
+        "Underground elven city, glowing crystals, intricate architecture, fantasy concept art, masterpiece",
+        "A knight in glowing holy armor, standing before a massive dragon, epic fantasy battle, cinematic scale",
+        "Floating steampunk city in the clouds, brass machinery, airships, Victorian fantasy, highly detailed",
+        "A dark sorcerer summoning a storm, lightning bolts, swirling magic energy, epic fantasy, 8k",
 
-    // SCI-FI & FUTURISM
-    "Portrait of a futuristic cyborg queen, intricate gold filigree, glowing eyes, unreal engine 5 render, masterpiece",
-    "Astronaut floating in a sea of liquid gold, surrealism, cosmic nebula background, dreamlike, highly detailed",
-    "Macro photography of a futuristic microchip, glowing circuits, depth of field, highly detailed, tech aesthetic",
-    "Inside a massive spaceship engine room, glowing plasma, industrial sci-fi, cinematic lighting, 8k",
-    "A humanoid robot painting on a canvas, human-like emotions, futuristic studio, soft lighting, masterpiece",
-    "Cybernetic jungle, mechanical plants, neon vines, futuristic biology, highly detailed, 8k",
-    "Interstellar wormhole, swirling stars and galaxies, cosmic scale, psychedelic colors, hyper-realistic",
-    "A futuristic laboratory, holographic displays, clean white aesthetic, sci-fi minimalism, high fidelity",
-    "Space station orbiting a black hole, event horizon, intense gravitational lensing, cinematic sci-fi",
-    "A sleek futuristic supercar, glowing LED lines, dark rainy city, cyberpunk aesthetic, 8k",
+        // SCI-FI & FUTURISM
+        "Portrait of a futuristic cyborg queen, intricate gold filigree, glowing eyes, unreal engine 5 render, masterpiece",
+        "Astronaut floating in a sea of liquid gold, surrealism, cosmic nebula background, dreamlike, highly detailed",
+        "Macro photography of a futuristic microchip, glowing circuits, depth of field, highly detailed, tech aesthetic",
+        "Inside a massive spaceship engine room, glowing plasma, industrial sci-fi, cinematic lighting, 8k",
+        "A humanoid robot painting on a canvas, human-like emotions, futuristic studio, soft lighting, masterpiece",
+        "Cybernetic jungle, mechanical plants, neon vines, futuristic biology, highly detailed, 8k",
+        "Interstellar wormhole, swirling stars and galaxies, cosmic scale, psychedelic colors, hyper-realistic",
+        "A futuristic laboratory, holographic displays, clean white aesthetic, sci-fi minimalism, high fidelity",
+        "Space station orbiting a black hole, event horizon, intense gravitational lensing, cinematic sci-fi",
+        "A sleek futuristic supercar, glowing LED lines, dark rainy city, cyberpunk aesthetic, 8k",
 
-    // SURREALISM & ARTISTIC
-    "Minimalist architecture, brutalist concrete, desert landscape, soft sunlight, architectural photography, high fidelity",
-    "A clock melting over a giant desert flower, Salvador Dali style, surrealism, dreamlike atmosphere",
-    "A whale flying through a sky of clouds, dreamlike, ethereal, surrealism, soft pastel colors",
-    "Human silhouette made of shattering glass, light refraction, surrealism, highly detailed, 8k",
-    "A tree where leaves are glowing butterflies, magical realism, soft bokeh, dreamlike, masterpiece",
-    "Abstract explosion of liquid colors, silk textures, flowing movement, macro, high resolution",
-    "A city built inside a giant glass sphere, floating in space, surrealism, intricate details, 8k",
-    "Dreamscape of a staircase leading to the moon, surrealism, ethereal lighting, masterpiece",
-    "A mountain made of giant books, surreal landscape, magical atmosphere, highly detailed",
-    "Ocean waves made of liquid diamonds, sparkling sunlight, surrealism, hyper-realistic, 8k",
+        // SURREALISM & ARTISTIC
+        "Minimalist architecture, brutalist concrete, desert landscape, soft sunlight, architectural photography, high fidelity",
+        "A clock melting over a giant desert flower, Salvador Dali style, surrealism, dreamlike atmosphere",
+        "A whale flying through a sky of clouds, dreamlike, ethereal, surrealism, soft pastel colors",
+        "Human silhouette made of shattering glass, light refraction, surrealism, highly detailed, 8k",
+        "A tree where leaves are glowing butterflies, magical realism, soft bokeh, dreamlike, masterpiece",
+        "Abstract explosion of liquid colors, silk textures, flowing movement, macro, high resolution",
+        "A city built inside a giant glass sphere, floating in space, surrealism, intricate details, 8k",
+        "Dreamscape of a staircase leading to the moon, surrealism, ethereal lighting, masterpiece",
+        "A mountain made of giant books, surreal landscape, magical atmosphere, highly detailed",
+        "Ocean waves made of liquid diamonds, sparkling sunlight, surrealism, hyper-realistic, 8k",
 
-    // ANIME & DIGITAL ART
-    "Anime style landscape, Studio Ghibli aesthetic, lush green meadows, soft sunlight, peaceful atmosphere",
-    "Cyberpunk anime girl, neon hair, futuristic street, vibrant colors, high quality digital art",
-    "Epic anime battle, energy beams, dynamic motion, intense colors, high fidelity digital art",
-    "Makoto Shinkai style sky, beautiful clouds, sunset, emotional atmosphere, high quality anime art",
-    "Cute chibi character in a magical forest, vibrant colors, 3D render style, masterpiece"
-];
+        // ANIME & DIGITAL ART
+        "Anime style landscape, Studio Ghibli aesthetic, lush green meadows, soft sunlight, peaceful atmosphere",
+        "Cyberpunk anime girl, neon hair, futuristic street, vibrant colors, high quality digital art",
+        "Epic anime battle, energy beams, dynamic motion, intense colors, high fidelity digital art",
+        "Makoto Shinkai style sky, beautiful clouds, sunset, emotional atmosphere, high quality anime art",
+        "Cute chibi character in a magical forest, vibrant colors, 3D render style, masterpiece",
+        
+        // EXTRA: PORTRAIT & CHARACTER
+        "Regal portrait of an elven queen, silver crown, flowing hair, ethereal beauty, fantasy, 8k",
+        "Gritty post-apocalyptic survivor, gas mask, wasteland, cinematic, hyper-realistic",
+        "Ancient Greek warrior, bronze armor, sunset battlefield, heroic pose, epic cinematic",
+        "Mysterious hooded figure, glowing eyes, dark fantasy, magic aura, highly detailed",
+        "Vibrant Bollywood dancer, colorful saree, dynamic movement, dramatic lighting, 8k",
+
+        // EXTRA: NATURE & LANDSCAPE
+        "Aurora borealis over snowy mountains, starry sky, reflection on ice, magical, 8k",
+        "Tropical waterfall in a hidden jungle, mist, rainbow, exotic plants, vibrant colors",
+        "Desert dunes at sunrise, golden sand, endless horizon, peaceful, cinematic, 8k",
+        "Cherry blossom garden in spring, pink petals, soft breeze, romantic atmosphere",
+        "Volcano erupting at night, lava flowing, lightning storm, dramatic, epic scale, 8k",
+
+        // EXTRA: ABSTRACT & CONCEPTUAL
+        "Abstract representation of time, melting clocks, cosmic background, surreal, dreamy",
+        "Futuristic city made of holographic data streams, glowing blue, cyberpunk, 8k",
+        "Underwater fantasy kingdom, mermaids, coral castles, bioluminescent, magical",
+        "Steampunk airship flying through clouds, brass gears, glowing lanterns, adventure",
+        "Ethereal being made of pure light, cosmic particles, angelic, divine, 8k"
+    ];
 
     els.btnRandom.onclick = () => {
         const s = premiumPrompts[Math.floor(Math.random() * premiumPrompts.length)];
