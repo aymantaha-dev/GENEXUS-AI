@@ -602,7 +602,6 @@ document.addEventListener('DOMContentLoaded', () => {
         els.settingsDrawer.classList.add('active');
         els.drawerOverlay.classList.add('active');
         document.body.style.overflow = 'hidden';
-        // Use requestAnimationFrame for smooth transition
         requestAnimationFrame(() => {
             els.settingsDrawer.style.transform = 'translateY(0)';
             drawerOffset = 0;
@@ -639,7 +638,6 @@ document.addEventListener('DOMContentLoaded', () => {
         isDragging = true;
         dragStartY = e.touches ? e.touches[0].clientY : e.clientY;
         document.body.style.userSelect = 'none';
-        // Disable transitions during drag for instant response
         drawer.style.transition = 'none';
     }
 
@@ -651,7 +649,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const maxOffset = window.innerHeight * 0.45;
         let newOffset = Math.min(Math.max(0, delta), maxOffset);
         drawerOffset = newOffset;
-        // Use requestAnimationFrame for smooth rendering
         if (rafId) cancelAnimationFrame(rafId);
         rafId = requestAnimationFrame(() => {
             drawer.style.transform = `translateY(${newOffset}px)`;
@@ -666,7 +663,6 @@ document.addEventListener('DOMContentLoaded', () => {
             cancelAnimationFrame(rafId);
             rafId = null;
         }
-        // Re-enable transitions for smooth snap
         drawer.style.transition = 'transform 0.35s cubic-bezier(0.25, 1, 0.5, 1)';
         const threshold = window.innerHeight * 0.12;
         if (drawerOffset > threshold) {
@@ -864,6 +860,7 @@ document.addEventListener('DOMContentLoaded', () => {
         hidePWAInstallBanner();
     }
 
+    // ============= NEW AUTO‑UPDATE LOGIC =============
     if ('serviceWorker' in navigator) {
         const isLocalhost = window.location.hostname === 'localhost' || 
                             window.location.hostname === '127.0.0.1';
@@ -872,20 +869,24 @@ document.addEventListener('DOMContentLoaded', () => {
             .then((registration) => {
                 console.log('[PWA] Service Worker registered successfully');
 
-                registration.addEventListener('updatefound', () => {
-                    const newWorker = registration.installing;
-                    newWorker.addEventListener('statechange', () => {
-                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            console.log('[PWA] New update available');
-                            showPWAUpdateNotification();
-                        }
-                    });
-                });
-
+                // Check for updates every 60 seconds
                 setInterval(() => {
                     registration.update();
                 }, 60000);
 
+                // Listen for new service worker installation
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    if (newWorker) {
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // New update is available → auto‑update
+                                console.log('[PWA] New update available, auto-updating...');
+                                newWorker.postMessage({ type: 'SKIP_WAITING' });
+                            }
+                        });
+                    }
+                });
             })
             .catch((error) => {
                 if (!isLocalhost) {
@@ -903,7 +904,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.location.reload();
             }
         });
+
+        // When coming back online, check for updates immediately
+        window.addEventListener('online', () => {
+            console.log('[PWA] Back online, checking for updates...');
+            if (navigator.serviceWorker.controller) {
+                navigator.serviceWorker.getRegistration().then(reg => reg && reg.update());
+            }
+        });
     }
+
+    // ============= END NEW AUTO‑UPDATE LOGIC =============
 
     if (pwaUpdateBtn) {
         pwaUpdateBtn.addEventListener('click', () => {
