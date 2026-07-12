@@ -12,52 +12,38 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function checkConnection() {
         return new Promise((resolve) => {
-            // Check if navigator is online
             if (!navigator.onLine) {
                 resolve(false);
                 return;
             }
-            
-            // Try to fetch a small resource to verify actual connectivity
             fetch('https://www.google.com/favicon.ico', { 
                 mode: 'no-cors',
                 cache: 'no-store'
             })
             .then(() => resolve(true))
             .catch(() => {
-                // If fetch fails, try a simple HEAD request to the same origin
                 fetch('/', { method: 'HEAD', cache: 'no-store' })
                     .then(() => resolve(true))
                     .catch(() => resolve(false));
             });
-            
-            // Fallback: if fetch takes too long
             setTimeout(() => resolve(false), 3000);
         });
     }
     
     async function initApp() {
-        // Show loading screen
         if (loadingScreen) {
             loadingScreen.classList.remove('hidden');
         }
-        
-        // Check connection
         const isOnline = await checkConnection();
-        
         if (isOnline) {
-            // Hide loading screen with animation
             if (loadingScreen) {
                 loadingScreen.classList.add('hidden');
             }
             if (mainContent) {
                 mainContent.style.display = 'block';
             }
-            
-            // Initialize the app
             await initializeApp();
         } else {
-            // Redirect to offline page
             window.location.href = 'offscreen.html';
         }
     }
@@ -89,9 +75,9 @@ document.addEventListener('DOMContentLoaded', () => {
         clearHistoryBtn: document.getElementById('clear-history')
     };
 
-    // ---- Application state (runtime) ----
+    // ---- Application state ----
     const state = {
-        ratioType: 'ultrawide', // Current ratio type
+        ratioType: 'ultrawide',
         baseWidth: 3840,
         baseHeight: 1080,
         currentWidth: 3840,
@@ -123,9 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function calculateDimensions(ratioType, quality) {
         const base = ratioBaseDimensions[ratioType];
         if (!base) return { w: 1024, h: 1024 };
-        
         const multiplier = qualityMultipliers[quality] || 0.5;
-        
         return {
             w: Math.round(base.w * multiplier),
             h: Math.round(base.h * multiplier)
@@ -231,21 +215,15 @@ document.addEventListener('DOMContentLoaded', () => {
             state.count = saved.count || 1;
             state.quality = saved.quality || 'medium';
             state.theme = saved.theme || 'dark';
-            
-            // Update dimensions based on loaded settings
             updateDimensions();
-            
-            // apply to UI
             applySettingsToUI();
             applyTheme(state.theme);
         } else {
-            // First time - set default dimensions
             updateDimensions();
         }
     }
 
     function applySettingsToUI() {
-        // Ratio buttons
         els.ratioBtns.forEach(btn => {
             const type = btn.dataset.type;
             if (type === state.ratioType) {
@@ -254,7 +232,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 btn.classList.remove('active');
             }
         });
-        // Quality buttons
         els.qualityBtns.forEach(btn => {
             if (btn.dataset.quality === state.quality) {
                 btn.classList.add('active');
@@ -262,7 +239,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 btn.classList.remove('active');
             }
         });
-        // Count buttons
         els.countBtns.forEach(btn => {
             if (parseInt(btn.dataset.count) === state.count) {
                 btn.classList.add('active');
@@ -301,20 +277,23 @@ document.addEventListener('DOMContentLoaded', () => {
         await dbDelete('images', id);
     }
 
-    // ---- Render gallery from DB ----
+    // ---- Render gallery from DB with fade-in ----
     async function renderGallery() {
         const images = await loadAllImages();
         state.images = images;
-        els.resultsGrid.innerHTML = '';
+        els.resultsGrid.replaceChildren();
         if (images.length === 0) {
             els.emptyState.classList.remove('hidden');
             return;
         }
         els.emptyState.classList.add('hidden');
+        const fragment = document.createDocumentFragment();
         images.forEach(img => {
             const card = createResultCard(img.url, img.prompt, img.id);
-            els.resultsGrid.appendChild(card);
+            card.classList.add('fade-in');
+            fragment.appendChild(card);
         });
+        els.resultsGrid.appendChild(fragment);
         lucide.createIcons();
     }
 
@@ -345,6 +324,25 @@ document.addEventListener('DOMContentLoaded', () => {
             e.stopPropagation();
             showDeleteConfirmation(id, card);
         };
+        return card;
+    }
+
+    // ---- Create placeholder card during generation ----
+    function createPlaceholderCard(index) {
+        const card = document.createElement('div');
+        card.className = 'result-card placeholder-card';
+        card.dataset.index = index;
+        card.style.aspectRatio = `${state.currentWidth} / ${state.currentHeight}`;
+
+        card.innerHTML = `
+            <div class="placeholder-content">
+                <div class="spinner-container">
+                    <div class="spinner"></div>
+                </div>
+                <div class="placeholder-shimmer"></div>
+            </div>
+        `;
+        card.classList.add('fade-in');
         return card;
     }
 
@@ -422,7 +420,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ---- Generation ----
+    // ---- Generation with placeholders ----
     els.btnGenerate.onclick = generateImages;
 
     async function generateImages() {
@@ -440,6 +438,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const finalPrompt = `${prompt}, ${qualityMap[state.quality]} ${style}`.trim();
         const seed = els.inputSeed.value || Math.floor(Math.random() * 1000000);
 
+        els.emptyState.classList.add('hidden');
+
+        // Create placeholders and prepend them
+        const placeholders = [];
+        for (let i = 0; i < state.count; i++) {
+            const placeholder = createPlaceholderCard(i);
+            els.resultsGrid.prepend(placeholder);
+            placeholders.push(placeholder);
+        }
+        lucide.createIcons();
+
         try {
             const tasks = [];
             for (let i = 0; i < state.count; i++) {
@@ -450,7 +459,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (validUrls.length === 0) throw new Error('API returned no images');
 
-            for (let url of validUrls) {
+            // Save each generated image to DB
+            for (let i = 0; i < validUrls.length; i++) {
+                const url = validUrls[i];
                 let dataUrl = url;
                 if (url.startsWith('blob:')) {
                     const resp = await fetch(url);
@@ -472,6 +483,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 await saveImageToDB(prompt, dataUrl);
             }
 
+            // Re-render the entire gallery from DB (includes old + new images)
             await renderGallery();
             showToast(`Generated ${validUrls.length} images!`);
             closeDrawer();
@@ -479,6 +491,15 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) {
             console.error(err);
             showToast('Generation failed. Try again.', 'error');
+            // Remove placeholders on error
+            placeholders.forEach(p => {
+                if (p && p.parentNode) {
+                    p.remove();
+                }
+            });
+            if (els.resultsGrid.children.length === 0) {
+                els.emptyState.classList.remove('hidden');
+            }
         } finally {
             setLoading(false);
         }
@@ -541,7 +562,6 @@ document.addEventListener('DOMContentLoaded', () => {
             els.ratioBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             state.ratioType = btn.dataset.type;
-            // Update dimensions based on new ratio and current quality
             updateDimensions();
             await saveSettings();
             console.log(`Ratio changed to: ${state.ratioType}, dimensions: ${state.currentWidth}x${state.currentHeight}`);
@@ -553,7 +573,6 @@ document.addEventListener('DOMContentLoaded', () => {
             els.qualityBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             state.quality = btn.dataset.quality;
-            // Update dimensions based on current ratio and new quality
             updateDimensions();
             await saveSettings();
             console.log(`Quality changed to: ${state.quality}, dimensions: ${state.currentWidth}x${state.currentHeight}`);
@@ -569,25 +588,43 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     });
 
-    // ---- Mobile drawer ----
+    // ---- Mobile drawer with ultra-smooth interaction ----
     let isDragging = false;
     let dragStartY = 0;
     let drawerOffset = 0;
+    let lastDrawerY = 0;
+    let rafId = null;
+    let isAnimating = false;
 
     function openDrawer() {
+        if (isAnimating) return;
+        isAnimating = true;
         els.settingsDrawer.classList.add('active');
         els.drawerOverlay.classList.add('active');
-        els.settingsDrawer.style.transform = 'translateY(0)';
-        drawerOffset = 0;
         document.body.style.overflow = 'hidden';
+        // Use requestAnimationFrame for smooth transition
+        requestAnimationFrame(() => {
+            els.settingsDrawer.style.transform = 'translateY(0)';
+            drawerOffset = 0;
+            lastDrawerY = 0;
+            setTimeout(() => {
+                isAnimating = false;
+            }, 50);
+        });
     }
 
     function closeDrawer() {
+        if (isAnimating) return;
+        isAnimating = true;
         els.settingsDrawer.classList.remove('active');
         els.drawerOverlay.classList.remove('active');
+        document.body.style.overflow = '';
         els.settingsDrawer.style.transform = '';
         drawerOffset = 0;
-        document.body.style.overflow = '';
+        lastDrawerY = 0;
+        setTimeout(() => {
+            isAnimating = false;
+        }, 50);
     }
 
     els.btnSettingsMobile.onclick = openDrawer;
@@ -598,10 +635,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const drawer = els.settingsDrawer;
 
     function onDragStart(e) {
-        if (!drawer.classList.contains('active')) return;
+        if (!drawer.classList.contains('active') || isAnimating) return;
         isDragging = true;
         dragStartY = e.touches ? e.touches[0].clientY : e.clientY;
         document.body.style.userSelect = 'none';
+        // Disable transitions during drag for instant response
+        drawer.style.transition = 'none';
     }
 
     function onDragMove(e) {
@@ -609,23 +648,37 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const currentY = e.touches ? e.touches[0].clientY : e.clientY;
         const delta = currentY - dragStartY;
-        const maxOffset = window.innerHeight * 0.4;
+        const maxOffset = window.innerHeight * 0.45;
         let newOffset = Math.min(Math.max(0, delta), maxOffset);
         drawerOffset = newOffset;
-        drawer.style.transform = `translateY(${newOffset}px)`;
+        // Use requestAnimationFrame for smooth rendering
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => {
+            drawer.style.transform = `translateY(${newOffset}px)`;
+        });
     }
 
     function onDragEnd(e) {
         if (!isDragging) return;
         isDragging = false;
         document.body.style.userSelect = '';
-        const threshold = window.innerHeight * 0.1;
+        if (rafId) {
+            cancelAnimationFrame(rafId);
+            rafId = null;
+        }
+        // Re-enable transitions for smooth snap
+        drawer.style.transition = 'transform 0.35s cubic-bezier(0.25, 1, 0.5, 1)';
+        const threshold = window.innerHeight * 0.12;
         if (drawerOffset > threshold) {
             closeDrawer();
         } else {
             drawer.style.transform = 'translateY(0)';
             drawerOffset = 0;
+            lastDrawerY = 0;
         }
+        setTimeout(() => {
+            drawer.style.transition = '';
+        }, 400);
     }
 
     handle.addEventListener('mousedown', onDragStart);
@@ -642,7 +695,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ---- Random prompt ----
     const premiumPrompts = [
-        // CINEMATIC & REALISM
         "Cyberpunk street photography, neon signage, rain-slicked pavement, cinematic lighting, 8k, hyper-realistic",
         "Portrait of a rugged Viking warrior, battle-worn face, intense eyes, snow falling, cinematic lighting, ultra-detailed",
         "A futuristic metropolis at sunset, flying vehicles, massive skyscrapers, volumetric fog, cinematic wide shot, 8k",
@@ -653,8 +705,6 @@ document.addEventListener('DOMContentLoaded', () => {
         "A majestic lion in the savanna, golden hour, dust particles in sunlight, National Geographic style, 8k",
         "Vintage luxury car driving through the Amalfi Coast, sun flare, cinematic motion blur, high fidelity",
         "A futuristic soldier in sleek carbon fiber armor, standing in a desert, cinematic lighting, unreal engine 5",
-
-        // FANTASY & MYTHOLOGY
         "Majestic floating islands with cascading waterfalls, ethereal atmosphere, fantasy landscape, volumetric lighting",
         "Ancient mystical forest, glowing bioluminescent flora, mythical creatures, fantasy art, epic composition",
         "A majestic dragon made of crystalline ice, breathing frost, mountain peak, hyper-realistic, 8k",
@@ -665,8 +715,6 @@ document.addEventListener('DOMContentLoaded', () => {
         "A knight in glowing holy armor, standing before a massive dragon, epic fantasy battle, cinematic scale",
         "Floating steampunk city in the clouds, brass machinery, airships, Victorian fantasy, highly detailed",
         "A dark sorcerer summoning a storm, lightning bolts, swirling magic energy, epic fantasy, 8k",
-
-        // SCI-FI & FUTURISM
         "Portrait of a futuristic cyborg queen, intricate gold filigree, glowing eyes, unreal engine 5 render, masterpiece",
         "Astronaut floating in a sea of liquid gold, surrealism, cosmic nebula background, dreamlike, highly detailed",
         "Macro photography of a futuristic microchip, glowing circuits, depth of field, highly detailed, tech aesthetic",
@@ -677,8 +725,6 @@ document.addEventListener('DOMContentLoaded', () => {
         "A futuristic laboratory, holographic displays, clean white aesthetic, sci-fi minimalism, high fidelity",
         "Space station orbiting a black hole, event horizon, intense gravitational lensing, cinematic sci-fi",
         "A sleek futuristic supercar, glowing LED lines, dark rainy city, cyberpunk aesthetic, 8k",
-
-        // SURREALISM & ARTISTIC
         "Minimalist architecture, brutalist concrete, desert landscape, soft sunlight, architectural photography, high fidelity",
         "A clock melting over a giant desert flower, Salvador Dali style, surrealism, dreamlike atmosphere",
         "A whale flying through a sky of clouds, dreamlike, ethereal, surrealism, soft pastel colors",
@@ -689,29 +735,21 @@ document.addEventListener('DOMContentLoaded', () => {
         "Dreamscape of a staircase leading to the moon, surrealism, ethereal lighting, masterpiece",
         "A mountain made of giant books, surreal landscape, magical atmosphere, highly detailed",
         "Ocean waves made of liquid diamonds, sparkling sunlight, surrealism, hyper-realistic, 8k",
-
-        // ANIME & DIGITAL ART
         "Anime style landscape, Studio Ghibli aesthetic, lush green meadows, soft sunlight, peaceful atmosphere",
         "Cyberpunk anime girl, neon hair, futuristic street, vibrant colors, high quality digital art",
         "Epic anime battle, energy beams, dynamic motion, intense colors, high fidelity digital art",
         "Makoto Shinkai style sky, beautiful clouds, sunset, emotional atmosphere, high quality anime art",
         "Cute chibi character in a magical forest, vibrant colors, 3D render style, masterpiece",
-        
-        // EXTRA: PORTRAIT & CHARACTER
         "Regal portrait of an elven queen, silver crown, flowing hair, ethereal beauty, fantasy, 8k",
         "Gritty post-apocalyptic survivor, gas mask, wasteland, cinematic, hyper-realistic",
         "Ancient Greek warrior, bronze armor, sunset battlefield, heroic pose, epic cinematic",
         "Mysterious hooded figure, glowing eyes, dark fantasy, magic aura, highly detailed",
         "Vibrant Bollywood dancer, colorful saree, dynamic movement, dramatic lighting, 8k",
-
-        // EXTRA: NATURE & LANDSCAPE
         "Aurora borealis over snowy mountains, starry sky, reflection on ice, magical, 8k",
         "Tropical waterfall in a hidden jungle, mist, rainbow, exotic plants, vibrant colors",
         "Desert dunes at sunrise, golden sand, endless horizon, peaceful, cinematic, 8k",
         "Cherry blossom garden in spring, pink petals, soft breeze, romantic atmosphere",
         "Volcano erupting at night, lava flowing, lightning storm, dramatic, epic scale, 8k",
-
-        // EXTRA: ABSTRACT & CONCEPTUAL
         "Abstract representation of time, melting clocks, cosmic background, surreal, dreamy",
         "Futuristic city made of holographic data streams, glowing blue, cyberpunk, 8k",
         "Underwater fantasy kingdom, mermaids, coral castles, bioluminescent, magical",
