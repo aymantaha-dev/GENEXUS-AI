@@ -1,5 +1,5 @@
 /**
- * GENEXUS UI - Core logic with IndexedDB persistence
+ * GENEXUS UI - Core logic with IndexedDB persistence, lazy loading, and no progress numbers
  * Manages image generation, history, settings, and theme with permanent storage.
  */
 
@@ -193,33 +193,44 @@ document.addEventListener('DOMContentLoaded', () => {
     // ---- Save / load settings ----
     async function saveSettings() {
         if (!db) return;
-        const settings = {
-            key: 'app-settings',
-            ratioType: state.ratioType,
-            baseWidth: state.baseWidth,
-            baseHeight: state.baseHeight,
-            count: state.count,
-            quality: state.quality,
-            theme: state.theme
-        };
-        await dbPut('settings', settings);
+        try {
+            const settings = {
+                key: 'app-settings',
+                ratioType: state.ratioType,
+                baseWidth: state.baseWidth,
+                baseHeight: state.baseHeight,
+                count: state.count,
+                quality: state.quality,
+                theme: state.theme
+            };
+            await dbPut('settings', settings);
+        } catch (err) {
+            console.warn('Failed to save settings:', err);
+            if (err.name === 'QuotaExceededError') {
+                showToast('Storage full! Please clear some images.', 'error');
+            }
+        }
     }
 
     async function loadSettings() {
         if (!db) return;
-        const saved = await dbGet('settings', 'app-settings');
-        if (saved) {
-            state.ratioType = saved.ratioType || 'ultrawide';
-            state.baseWidth = saved.baseWidth || 3840;
-            state.baseHeight = saved.baseHeight || 1080;
-            state.count = saved.count || 1;
-            state.quality = saved.quality || 'medium';
-            state.theme = saved.theme || 'dark';
-            updateDimensions();
-            applySettingsToUI();
-            applyTheme(state.theme);
-        } else {
-            updateDimensions();
+        try {
+            const saved = await dbGet('settings', 'app-settings');
+            if (saved) {
+                state.ratioType = saved.ratioType || 'ultrawide';
+                state.baseWidth = saved.baseWidth || 3840;
+                state.baseHeight = saved.baseHeight || 1080;
+                state.count = saved.count || 1;
+                state.quality = saved.quality || 'medium';
+                state.theme = saved.theme || 'dark';
+                updateDimensions();
+                applySettingsToUI();
+                applyTheme(state.theme);
+            } else {
+                updateDimensions();
+            }
+        } catch (err) {
+            console.warn('Failed to load settings:', err);
         }
     }
 
@@ -256,28 +267,75 @@ document.addEventListener('DOMContentLoaded', () => {
     // ---- Image storage ----
     async function saveImageToDB(prompt, dataUrl) {
         if (!db) return null;
-        const entry = {
-            prompt: prompt,
-            url: dataUrl,
-            timestamp: Date.now()
-        };
-        const id = await dbPut('images', entry);
-        return id;
+        try {
+            const entry = {
+                prompt: prompt,
+                url: dataUrl,
+                timestamp: Date.now()
+            };
+            const id = await dbPut('images', entry);
+            return id;
+        } catch (err) {
+            console.warn('Failed to save image:', err);
+            if (err.name === 'QuotaExceededError') {
+                showToast('Storage full! Please delete some images.', 'error');
+            }
+            return null;
+        }
     }
 
     async function loadAllImages() {
         if (!db) return [];
-        const all = await dbGetAll('images');
-        all.sort((a, b) => b.timestamp - a.timestamp);
-        return all;
+        try {
+            const all = await dbGetAll('images');
+            all.sort((a, b) => b.timestamp - a.timestamp);
+            return all;
+        } catch (err) {
+            console.warn('Failed to load images:', err);
+            return [];
+        }
     }
 
     async function deleteImageFromDB(id) {
         if (!db) return;
-        await dbDelete('images', id);
+        try {
+            await dbDelete('images', id);
+        } catch (err) {
+            console.warn('Failed to delete image:', err);
+        }
     }
 
-    // ---- Render gallery from DB with fade-in ----
+    // ---- Intersection Observer for lazy loading ----
+    let imageObserver = null;
+
+    function setupLazyLoading() {
+        if (imageObserver) {
+            imageObserver.disconnect();
+        }
+        imageObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    const src = img.dataset.src;
+                    if (src) {
+                        img.src = src;
+                        img.removeAttribute('data-src');
+                    }
+                    imageObserver.unobserve(img);
+                }
+            });
+        }, {
+            rootMargin: '200px',
+            threshold: 0.01
+        });
+
+        // Observe all images with data-src
+        document.querySelectorAll('.result-card img[data-src]').forEach(img => {
+            imageObserver.observe(img);
+        });
+    }
+
+    // ---- Render gallery from DB with lazy loading ----
     async function renderGallery() {
         const images = await loadAllImages();
         state.images = images;
@@ -295,53 +353,86 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         els.resultsGrid.appendChild(fragment);
         lucide.createIcons();
+
+        // Ensure lazy loading is set up after DOM update
+        // Use setTimeout to allow browser to paint
+        setTimeout(() => {
+            setupLazyLoading();
+        }, 50);
     }
 
-    // ---- Create result card with delete button ----
+    // ---- Create result card with lazy loading ----
     function createResultCard(url, prompt, id) {
         const card = document.createElement('div');
         card.className = 'result-card';
         card.dataset.id = id;
-        card.innerHTML = `
-            <img src="${url}" alt="AI generated artwork" loading="lazy" />
-            <div class="result-overlay">
-                <button class="action-icon-btn dl-btn" title="Download"><i data-lucide="download"></i></button>
-                <button class="action-icon-btn cp-btn" title="Copy Prompt"><i data-lucide="copy"></i></button>
-                <button class="action-icon-btn del-btn" title="Delete"><i data-lucide="trash-2"></i></button>
-            </div>
-        `;
-        card.querySelector('.dl-btn').onclick = (e) => {
+        const img = document.createElement('img');
+        // Use data-src for lazy loading
+        img.dataset.src = url;
+        img.alt = 'AI generated artwork';
+        img.loading = 'lazy';
+        card.appendChild(img);
+
+        const overlay = document.createElement('div');
+        overlay.className = 'result-overlay';
+
+        const dlBtn = document.createElement('button');
+        dlBtn.className = 'action-icon-btn dl-btn';
+        dlBtn.title = 'Download';
+        dlBtn.innerHTML = '<i data-lucide="download"></i>';
+        dlBtn.onclick = (e) => {
             e.stopPropagation();
             download(url);
         };
-        card.querySelector('.cp-btn').onclick = (e) => {
+        overlay.appendChild(dlBtn);
+
+        const cpBtn = document.createElement('button');
+        cpBtn.className = 'action-icon-btn cp-btn';
+        cpBtn.title = 'Copy Prompt';
+        cpBtn.innerHTML = '<i data-lucide="copy"></i>';
+        cpBtn.onclick = (e) => {
             e.stopPropagation();
             navigator.clipboard.writeText(prompt);
             showToast('Prompt copied!');
         };
-        const delBtn = card.querySelector('.del-btn');
+        overlay.appendChild(cpBtn);
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'action-icon-btn del-btn';
+        delBtn.title = 'Delete';
+        delBtn.innerHTML = '<i data-lucide="trash-2"></i>';
         delBtn.onclick = (e) => {
             e.stopPropagation();
             showDeleteConfirmation(id, card);
         };
+        overlay.appendChild(delBtn);
+
+        card.appendChild(overlay);
         return card;
     }
 
-    // ---- Create placeholder card during generation ----
-    function createPlaceholderCard(index) {
+    // ---- Create placeholder card (no progress numbers) ----
+    function createPlaceholderCard(index, total) {
         const card = document.createElement('div');
         card.className = 'result-card placeholder-card';
         card.dataset.index = index;
         card.style.aspectRatio = `${state.currentWidth} / ${state.currentHeight}`;
 
-        card.innerHTML = `
-            <div class="placeholder-content">
-                <div class="spinner-container">
-                    <div class="spinner"></div>
-                </div>
-                <div class="placeholder-shimmer"></div>
-            </div>
-        `;
+        const content = document.createElement('div');
+        content.className = 'placeholder-content';
+
+        const spinnerContainer = document.createElement('div');
+        spinnerContainer.className = 'spinner-container';
+        const spinner = document.createElement('div');
+        spinner.className = 'spinner';
+        spinnerContainer.appendChild(spinner);
+        content.appendChild(spinnerContainer);
+
+        const shimmer = document.createElement('div');
+        shimmer.className = 'placeholder-shimmer';
+        content.appendChild(shimmer);
+
+        card.appendChild(content);
         card.classList.add('fade-in');
         return card;
     }
@@ -420,7 +511,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ---- Generation with placeholders ----
+    // ---- Generation with placeholders (no progress updates) ----
     els.btnGenerate.onclick = generateImages;
 
     async function generateImages() {
@@ -440,10 +531,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         els.emptyState.classList.add('hidden');
 
-        // Create placeholders and prepend them
+        // Create placeholders (no progress bars or text)
         const placeholders = [];
         for (let i = 0; i < state.count; i++) {
-            const placeholder = createPlaceholderCard(i);
+            const placeholder = createPlaceholderCard(i, state.count);
             els.resultsGrid.prepend(placeholder);
             placeholders.push(placeholder);
         }
@@ -454,10 +545,13 @@ document.addEventListener('DOMContentLoaded', () => {
             for (let i = 0; i < state.count; i++) {
                 tasks.push(fetchImage(finalPrompt, seed + i));
             }
+
             const urls = await Promise.all(tasks);
             const validUrls = urls.filter(u => u !== null);
 
-            if (validUrls.length === 0) throw new Error('API returned no images');
+            if (validUrls.length === 0) {
+                throw new Error('API returned no images');
+            }
 
             // Save each generated image to DB
             for (let i = 0; i < validUrls.length; i++) {
@@ -483,7 +577,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 await saveImageToDB(prompt, dataUrl);
             }
 
-            // Re-render the entire gallery from DB (includes old + new images)
             await renderGallery();
             showToast(`Generated ${validUrls.length} images!`);
             closeDrawer();
@@ -518,20 +611,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const res = await fetch(`${baseUrl}?${params.toString()}`);
-            if (!res.ok) return null;
+            if (!res.ok) {
+                throw new Error(`API returned ${res.status}`);
+            }
             const type = res.headers.get('content-type');
 
             if (type?.includes('application/json')) {
                 const data = await res.json();
-                return data.url || data.image || data.imageUrl || null;
+                const imageUrl = data.url || data.image || data.imageUrl || null;
+                if (!imageUrl) {
+                    throw new Error('No image URL in JSON response');
+                }
+                return imageUrl;
             }
             if (type?.includes('image')) {
                 const blob = await res.blob();
                 return URL.createObjectURL(blob);
             }
             const text = await res.text();
-            return text.startsWith('data:image') ? text : null;
+            if (text.startsWith('data:image')) {
+                return text;
+            }
+            throw new Error('Unexpected response format');
         } catch (e) {
+            console.warn('fetchImage error:', e);
             return null;
         }
     }
@@ -552,7 +655,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     function updateThemeIcon(theme) {
-        els.btnTheme.innerHTML = theme === 'dark' ? '<i data-lucide="sun"></i>' : '<i data-lucide="moon"></i>';
+        const icon = theme === 'dark' ? 'sun' : 'moon';
+        els.btnTheme.innerHTML = `<i data-lucide="${icon}"></i>`;
         lucide.createIcons();
     }
 
@@ -588,7 +692,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     });
 
-    // ---- Mobile drawer with ultra-smooth interaction ----
+    // ---- Mobile drawer with slide-down close ----
     let isDragging = false;
     let dragStartY = 0;
     let drawerOffset = 0;
@@ -599,6 +703,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function openDrawer() {
         if (isAnimating) return;
         isAnimating = true;
+        els.settingsDrawer.classList.remove('closing');
         els.settingsDrawer.classList.add('active');
         els.drawerOverlay.classList.add('active');
         document.body.style.overflow = 'hidden';
@@ -615,15 +720,17 @@ document.addEventListener('DOMContentLoaded', () => {
     function closeDrawer() {
         if (isAnimating) return;
         isAnimating = true;
-        els.settingsDrawer.classList.remove('active');
+        els.settingsDrawer.classList.add('closing');
+        els.settingsDrawer.style.transform = 'translateY(100%)';
         els.drawerOverlay.classList.remove('active');
         document.body.style.overflow = '';
-        els.settingsDrawer.style.transform = '';
-        drawerOffset = 0;
-        lastDrawerY = 0;
         setTimeout(() => {
+            els.settingsDrawer.classList.remove('active', 'closing');
+            els.settingsDrawer.style.transform = '';
+            drawerOffset = 0;
+            lastDrawerY = 0;
             isAnimating = false;
-        }, 50);
+        }, 400);
     }
 
     els.btnSettingsMobile.onclick = openDrawer;
@@ -760,7 +867,7 @@ document.addEventListener('DOMContentLoaded', () => {
     els.btnClear.onclick = () => els.promptInput.value = '';
     els.btnGallery.onclick = () => els.gallerySection.scrollIntoView({ behavior: 'smooth' });
 
-    // ---- Clear history (clear all images) ----
+    // ---- Clear history ----
     els.clearHistoryBtn.onclick = async () => {
         if (!db) return;
         const images = await loadAllImages();
@@ -777,7 +884,8 @@ document.addEventListener('DOMContentLoaded', () => {
     async function initializeApp() {
         await openDB();
         await loadSettings();
-        await renderGallery();
+        // Render gallery and setup lazy loading
+        await renderGallery(); // this already calls setupLazyLoading after a delay
         updateThemeIcon(state.theme);
         document.documentElement.setAttribute('data-theme', state.theme);
         console.log('App initialized with dimensions:', state.currentWidth, 'x', state.currentHeight);
@@ -785,7 +893,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ---- Start the app with connection check ----
     initApp();
-    
+
     // =============================================
     // PWA - Progressive Web App Functionality
     // =============================================
@@ -860,7 +968,7 @@ document.addEventListener('DOMContentLoaded', () => {
         hidePWAInstallBanner();
     }
 
-    // ============= NEW AUTO‑UPDATE LOGIC =============
+    // Service Worker registration (unchanged)
     if ('serviceWorker' in navigator) {
         const isLocalhost = window.location.hostname === 'localhost' || 
                             window.location.hostname === '127.0.0.1';
@@ -868,19 +976,14 @@ document.addEventListener('DOMContentLoaded', () => {
         navigator.serviceWorker.register('./service-worker.js')
             .then((registration) => {
                 console.log('[PWA] Service Worker registered successfully');
-
-                // Check for updates every 60 seconds
                 setInterval(() => {
                     registration.update();
                 }, 60000);
-
-                // Listen for new service worker installation
                 registration.addEventListener('updatefound', () => {
                     const newWorker = registration.installing;
                     if (newWorker) {
                         newWorker.addEventListener('statechange', () => {
                             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                // New update is available → auto‑update
                                 console.log('[PWA] New update available, auto-updating...');
                                 newWorker.postMessage({ type: 'SKIP_WAITING' });
                             }
@@ -905,7 +1008,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // When coming back online, check for updates immediately
         window.addEventListener('online', () => {
             console.log('[PWA] Back online, checking for updates...');
             if (navigator.serviceWorker.controller) {
@@ -913,8 +1015,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
-    // ============= END NEW AUTO‑UPDATE LOGIC =============
 
     if (pwaUpdateBtn) {
         pwaUpdateBtn.addEventListener('click', () => {

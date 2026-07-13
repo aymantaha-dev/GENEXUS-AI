@@ -725,7 +725,7 @@ body {
     transform: translateY(0);
 }
 
-/* ===== Placeholder with Spinner & Shimmer ===== */
+/* ===== Placeholder with Skeleton (no progress numbers) ===== */
 .placeholder-card {
     background: var(--card-bg);
     border: 2px dashed rgba(168, 85, 247, 0.25);
@@ -734,6 +734,10 @@ body {
     position: relative;
     aspect-ratio: 16 / 9;
     transition: border-color 0.4s ease, box-shadow 0.4s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
 .placeholder-card:hover {
@@ -750,7 +754,8 @@ body {
     justify-content: center;
     width: 100%;
     height: 100%;
-    gap: 0;
+    gap: 0.5rem;
+    padding: 1rem;
 }
 
 .spinner-container {
@@ -835,15 +840,19 @@ body {
         border: 1px solid var(--border-color);
         border-bottom: none;
         padding: 0;
-        animation: slideUpSheet 0.5s cubic-bezier(0.25, 1, 0.5, 1);
         overflow: hidden;
         transform: translateY(100%);
         will-change: transform;
         touch-action: pan-y;
+        transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
     }
 
     .sidebar-settings.active {
         transform: translateY(0);
+    }
+
+    .sidebar-settings.closing {
+        transform: translateY(100%);
     }
 
     .drag-handle {

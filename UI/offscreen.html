@@ -115,7 +115,7 @@
         }
 
         p {
-            color: #8e8e93;
+            color: #8e8e93; /* direct color instead of var(--text-muted) */
             line-height: 1.6;
             margin-bottom: 1.5rem;
         }
@@ -148,7 +148,7 @@
         .retry-status {
             margin-top: 1rem;
             font-size: 0.85rem;
-            color: var(--text-muted);
+            color: #8e8e93;
             min-height: 1.5rem;
         }
     </style>
@@ -182,18 +182,15 @@
                 retryStatus.textContent = 'Checking connection...';
                 retryStatus.style.color = '#8e8e93';
                 
-                // Try to connect
                 let connected = false;
                 
                 try {
-                    // Try to fetch a small resource
                     const response = await fetch('https://www.google.com/favicon.ico', { 
                         mode: 'no-cors',
                         cache: 'no-store'
                     });
                     connected = true;
                 } catch (e) {
-                    // If fails, try HEAD request to same origin
                     try {
                         const res = await fetch('/', { method: 'HEAD', cache: 'no-store' });
                         if (res.ok || res.type === 'opaque') {
